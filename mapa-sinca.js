@@ -10,60 +10,72 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let DATA = [];
 
-  // ---------------- NORMALIZACIÓN FUERTE ----------------
+  // ---------------- NORMALIZACIÓN ----------------
 
   function normalize(text) {
     if (!text) return "";
 
-    const t = document.createElement("textarea");
-    t.innerHTML = text;
-
-    return t.value
+    return text
+      .toString()
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  // ---------------- KEY ROBUSTO ----------------
+  // ---------------- KEY CONTAMINANTE ----------------
 
-  function getKey(name, code) {
+  function getPollutantKey(name) {
 
-    const n = normalize(name + " " + code);
+    const n = normalize(name);
 
     if (n.includes("mp-2") || n.includes("pm25")) return "PM25";
     if (n.includes("mp-10") || n.includes("pm10")) return "PM10";
 
-    if (n.includes("no2") || n.includes("dioxido de nitrogeno")) return "NO2";
-    if (n.includes("o3") || n.includes("ozono")) return "O3";
-    if (n.includes("co") || n.includes("monoxido de carbono")) return "CO";
-    if (n.includes("so2") || n.includes("dioxido de azufre")) return "SO2";
+    if (n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
+    if (n.includes("monoxido de carbono") || n.includes("co")) return "CO";
+    if (n.includes("ozono") || n.includes("o3")) return "O3";
+    if (n.includes("dioxido de azufre") || n.includes("so2")) return "SO2";
 
     return "OTHER";
   }
 
-  // ---------------- EXTRACCIÓN SEGURA ----------------
+  // ---------------- FILTRO NORMALIZADO ----------------
 
-  function getNumber(raw) {
-    if (raw === null || raw === undefined) return null;
+  function normalizeFilter(filter) {
 
-    const str = String(raw);
+    const f = normalize(filter).replace(/[^a-z0-9]/g, "");
 
-    if (str.includes("--")) return null;
+    const map = {
+      "mp25": "PM25",
+      "mp10": "PM10",
+      "pm25": "PM25",
+      "pm10": "PM10",
+      "no2": "NO2",
+      "co": "CO",
+      "o3": "O3",
+      "so2": "SO2"
+    };
 
-    const m = str.match(/(\d+(\.\d+)?)/);
+    return map[f] || filter;
+  }
+
+  // ---------------- EXTRAER NÚMERO ----------------
+
+  function getNumber(v) {
+    if (v === null || v === undefined) return null;
+
+    const m = String(v).match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
   // ---------------- UNIDADES ----------------
 
   function getUnit(key) {
-
     if (key === "PM25" || key === "PM10") return "µg/m³";
     if (key === "NO2") return "ppbv";
     if (key === "CO") return "ppmv";
     if (key === "O3") return "ppbv";
     if (key === "SO2") return "ppbv";
-
     return "";
   }
 
@@ -78,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // ---------------- LOAD ----------------
+  // ---------------- LOAD DATA ----------------
 
   async function loadData() {
 
@@ -101,12 +113,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const value = getNumber(raw);
-
-        // 👇 IMPORTANTE: NO eliminar si no hay valor numérico aún
-        // solo lo marcamos pero lo dejamos pasar si quieres debug
         if (value === null) return;
 
-        const key = getKey(r.name, r.code);
+        const key = getPollutantKey(r.name || r.code);
 
         values.push({
           name: r.name || r.code,
@@ -130,11 +139,12 @@ document.addEventListener("DOMContentLoaded", function () {
     render();
   }
 
-  // ---------------- RENDER ----------------
+  // ---------------- RENDER GLOBAL ----------------
 
   function render() {
 
-    const filter = document.getElementById("filter").value;
+    const filterRaw = document.getElementById("filter").value;
+    const filter = normalizeFilter(filterRaw);
 
     const filtered = DATA.map(s => {
 
@@ -152,8 +162,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }).filter(s => s.values.length > 0);
 
     renderMap(filtered);
-    renderRanking(filtered);
-    renderAlerts(filtered);
+    renderRanking(filtered, filter);
+    renderAlerts(filtered, filter);
   }
 
   // ---------------- MAPA ----------------
@@ -185,13 +195,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ---------------- RANKING ----------------
 
-  function renderRanking(data) {
+  function renderRanking(data, filter) {
 
     const ranking = data
-      .map(s => ({
-        ...s,
-        worst: Math.max(...s.values.map(v => v.value))
-      }))
+      .map(s => {
+
+        const vals = (filter === "ALL")
+          ? s.values
+          : s.values.filter(v => v.key === filter);
+
+        return {
+          ...s,
+          worst: Math.max(...vals.map(v => v.value))
+        };
+
+      })
       .sort((a, b) => b.worst - a.worst);
 
     document.getElementById("ranking").innerHTML =
@@ -205,11 +223,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ---------------- ALERTAS ----------------
 
-  function renderAlerts(data) {
+  function renderAlerts(data, filter) {
 
-    const alerts = data.filter(s =>
-      Math.max(...s.values.map(v => v.value)) > 100
-    );
+    const alerts = data.filter(s => {
+
+      const vals = (filter === "ALL")
+        ? s.values
+        : s.values.filter(v => v.key === filter);
+
+      if (!vals.length) return false;
+
+      const max = Math.max(...vals.map(v => v.value));
+
+      return max > 100;
+    });
 
     document.getElementById("alerts").innerHTML =
       alerts.map(s => `
@@ -219,9 +246,11 @@ document.addEventListener("DOMContentLoaded", function () {
       `).join("");
   }
 
-  // ---------------- INIT ----------------
+  // ---------------- EVENTS ----------------
 
   document.getElementById("filter").addEventListener("change", render);
+
+  // ---------------- INIT ----------------
 
   loadData();
   setInterval(loadData, 300000);
