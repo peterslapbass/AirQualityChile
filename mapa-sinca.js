@@ -23,10 +23,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (name.includes("mp-10") || name.includes("pm10")) return "µg/m³";
   
     // Gases
-    if (name.includes("monóxido de carbono") || name.includes("co")) return "ppmv";
+    if (name.includes("monóxido de carbono") || name.includes("CO")) return "ppmv";
     if (name.includes("ozono") || name.includes("o3")) return "ppbv";
-    if (name.includes("dióxido de nitrógeno") || name.includes("no2")) return "ppbv";
-    if (name.includes("dióxido de azufre") || name.includes("so2")) return "ppbv";
+    if (name.includes("dióxido de nitrógeno") || name.includes("NO2")) return "ppbv";
+    if (name.includes("dióxido de azufre") || name.includes("SO2")) return "ppbv";
   
     // fallback
     return "";
