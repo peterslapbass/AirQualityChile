@@ -10,36 +10,37 @@ document.addEventListener("DOMContentLoaded", function () {
   let markersLayer = L.layerGroup().addTo(map);
 
   // 🧼 NORMALIZACIÓN TIPO PYTHON (PORTADA A JS)
-  function normalizarValor(valor) {
+ function normalizarValor(valor) {
 
-    if (valor === null || valor === undefined) return null;
+  if (valor === null || valor === undefined) return null;
 
-    if (typeof valor === "string") {
-      valor = valor.trim().toLowerCase();
+  // si ya es número
+  if (typeof valor === "number") {
+    return isNaN(valor) ? null : valor;
+  }
 
-      if (
-        valor === "" ||
-        valor === "no disponible" ||
-        valor === "null" ||
-        valor === "nan"
-      ) {
-        return null;
-      }
+  // strings
+  if (typeof valor === "string") {
 
-      const num = Number(valor);
-      if (isNaN(num)) return null;
+    const limpio = valor.trim().toLowerCase();
 
-      return num;
-    }
+    if (
+      limpio === "" ||
+      limpio === "no disponible" ||
+      limpio === "null" ||
+      limpio === "nan"
+    ) return null;
 
-    if (typeof valor === "number") {
-      if (isNaN(valor)) return null;
-      return valor;
-    }
+    // intentar convertir
+    const num = Number(limpio);
+
+    if (!isNaN(num)) return num;
 
     return null;
   }
 
+  return null;
+}
   // 🔍 extraer último valor válido (con lógica limpia)
   function extraerUltimoValor(infoRows) {
 
