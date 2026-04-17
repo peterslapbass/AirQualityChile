@@ -8,33 +8,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  function decodeHtml(text) {
+  // 🧼 decodificador real (clave)
+  function cleanText(text) {
     const t = document.createElement("textarea");
-    t.innerHTML = text;
-    return t.value;
+    t.innerHTML = text || "";
+    return t.value
+      .replace(/--\s*:?\s*hrs\.?/gi, "")
+      .replace(/ICAP/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
-  // 🔥 SOLO validar número real (clave)
+  // 🔢 extraer número real
   function extractValor(text) {
-    if (!text) return null;
-
-    const clean = decodeHtml(String(text));
-
-    const match = clean.match(/(\d+(\.\d+)?)/);
-    if (!match) return null;
-
-    const value = Number(match[0]);
-
-    return isNaN(value) ? null : value;
+    const match = String(text).match(/(\d+(\.\d+)?)/);
+    return match ? Number(match[0]) : null;
   }
 
-  // 🧼 unidad sin romper
+  // 🧪 unidad limpia
   function extractUnidad(text) {
-    return String(text || "")
+    return String(text)
       .replace(/ICAP/gi, "")
       .replace(/--\s*:?\s*hrs\.?/gi, "")
       .replace(/\d+(\.\d+)?/g, "")
-      .replace(/⁄/g, "/")
+      .replace(/&#;|⁄/g, "/")
       .replace(/\s+/g, " ")
       .trim();
   }
@@ -70,16 +67,16 @@ document.addEventListener("DOMContentLoaded", function () {
             const rows = r?.info?.rows;
             if (!Array.isArray(rows)) return;
 
-            // 🔥 buscar último valor válido REAL
             let raw = null;
 
+            // 🔥 buscar último valor REAL válido
             for (let i = rows.length - 1; i >= 0; i--) {
 
-              const candidate = rows[i]?.c?.[3]?.v;
+              const candidate = cleanText(rows[i]?.c?.[3]?.v);
 
-              const value = extractValor(candidate);
+              const val = extractValor(candidate);
 
-              if (value !== null) {
+              if (val !== null) {
                 raw = candidate;
                 break;
               }
