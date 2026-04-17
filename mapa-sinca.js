@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
 
+  // 🗺️ MAPA
   const map = L.map('map').setView([-33.45, -70.66], 5);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -8,7 +9,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🔍 extraer valor + unidad
+  // 🧼 decode HTML entities
+  function decodeHtml(text) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = text;
+    return txt.value;
+  }
+
+  // 🔍 extractor robusto SINCA
   function getValorRealtime(r) {
 
     const rows = r?.info?.rows;
@@ -22,12 +30,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!Array.isArray(c)) continue;
 
-        const raw = c[3]?.v; // aquí viene a veces texto completo
+        let raw = c[3]?.v;
 
         if (raw === null || raw === undefined || raw === "") continue;
 
-        // si ya viene como string con unidad
+        // =========================
+        // CASO STRING (con unidad + basura)
+        // =========================
         if (typeof raw === "string") {
+
+          raw = decodeHtml(raw);
+
+          // 🧼 limpiar basura del SINCA
+          raw = raw.replace(/ICAP/g, "");
+          raw = raw.replace(/--:hrs/g, "");
+          raw = raw.replace(/\s+/g, " ").trim();
 
           const match = raw.match(/([\d.]+)/);
 
@@ -39,7 +56,9 @@ document.addEventListener("DOMContentLoaded", function () {
           };
         }
 
-        // si viene como número puro
+        // =========================
+        // CASO NUMÉRICO DIRECTO
+        // =========================
         const num = Number(raw);
 
         if (!isNaN(num) && num !== 0 && num !== 1) {
@@ -51,6 +70,9 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
+    // =========================
+    // FALLBACK tableRow
+    // =========================
     const tr = r?.tableRow;
 
     if (tr && typeof tr === "object") {
@@ -71,6 +93,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return null;
   }
 
+  // 🎨 colores básicos (ICAP futuro)
   function getColor(valor) {
 
     const v = Number(valor);
@@ -83,6 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
+  // 📡 cargar datos
   function cargarDatos() {
 
     fetch("datos_sinca.json")
@@ -127,6 +151,7 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         });
 
+        // 🧱 crear markers
         Object.values(popupDict).forEach(estacion => {
 
           if (!estacion.analisis.length) return;
@@ -151,10 +176,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         });
 
+        console.log("✔ Datos cargados correctamente:", popupDict);
+
       })
       .catch(err => console.error("Error cargando datos:", err));
   }
 
+  // 🔄 init + refresh
   cargarDatos();
   setInterval(cargarDatos, 300000);
 
