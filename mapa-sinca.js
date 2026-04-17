@@ -6,10 +6,20 @@ document.addEventListener("DOMContentLoaded", function () {
     attribution: '&copy; OpenStreetMap & CartoDB'
   }).addTo(map);
 
-  // 🔥 PRUEBA: marcador manual
-  L.marker([-33.45, -70.66])
-    .addTo(map)
-    .bindPopup("Funciona!")
-    .openPopup();
+  fetch("https://api.allorigins.win/raw?url=https://sinca.mma.gob.cl/index.php/json/listadomapa2k19")
+    .then(res => res.json())
+    .then(data => {
 
+      console.log("DATA:", data); // 👈 clave
+
+      data.forEach(estacion => {
+        if (estacion.latitud && estacion.longitud) {
+          L.marker([estacion.latitud, estacion.longitud])
+            .addTo(map)
+            .bindPopup(estacion.nombre);
+        }
+      });
+
+    })
+    .catch(err => console.error("ERROR:", err));
 });
