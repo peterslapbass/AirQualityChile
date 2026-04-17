@@ -11,14 +11,18 @@ document.addEventListener("DOMContentLoaded", function () {
   // ---------------- NORMALIZACIÓN ----------------
 
   function normalize(text) {
-    return (text || "")
-      .toString()
+    if (!text) return "";
+
+    const t = document.createElement("textarea");
+    t.innerHTML = text;
+
+    return t.value
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  // ---------------- KEY CONTAMINANTE ----------------
+  // ---------------- CLAVE CONTAMINANTE ----------------
 
   function getKey(name, code) {
 
@@ -44,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return m ? Number(m[0]) : null;
   }
 
-  // ---------------- UNIDADES FIJAS (IMPORTANTE) ----------------
+  // ---------------- UNIDADES FIJAS ----------------
 
   function getUnit(key) {
 
@@ -71,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // ---------------- CARGA ----------------
+  // ---------------- CARGA DATOS ----------------
 
   async function loadData() {
 
@@ -82,7 +86,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     data.forEach(station => {
 
-      (station.realtime || []).forEach(r => {
+      const realtime = station.realtime || [];
+
+      realtime.forEach(r => {
 
         let raw = "";
 
@@ -116,7 +122,7 @@ document.addEventListener("DOMContentLoaded", function () {
     renderMap(normalized);
   }
 
-  // ---------------- MAPA ----------------
+  // ---------------- RENDER MAPA ----------------
 
   function renderMap(data) {
 
