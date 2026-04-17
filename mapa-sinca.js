@@ -76,6 +76,8 @@ document.addEventListener("DOMContentLoaded", function () {
               };
             }
 
+            console.log("estructura:", r);
+            
             // 🔥 acceso correcto
             const infoRows = r.info?.rows;
 
