@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  console.log("🔥 MAPA SINCA ACTIVO");
+  console.log("🔥 MAPA SINCA - STATION MODE");
 
   const map = L.map('map').setView([-33.45, -70.66], 5);
 
@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let layer = L.layerGroup().addTo(map);
 
-  let DATA = {};
+  let STATIONS = {};
   let CURRENT_FILTER = "ALL";
 
   /* ---------------- NORMALIZAR ---------------- */
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return m ? Number(m[0]) : null;
   }
 
-  /* ---------------- CLASIFICAR CONTAMINANTE ---------------- */
+  /* ---------------- CONTAMINANTE ---------------- */
 
   function getPollutant(name){
 
@@ -44,7 +44,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if(n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
     if(n.includes("monoxido de carbono") || n.includes("co")) return "CO";
-
     if(n.includes("ozono") || n.includes("o3")) return "O3";
 
     return null;
@@ -52,9 +51,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /* ---------------- UNIDADES ---------------- */
 
-  function getUnit(pollutant){
+  function getUnit(p){
 
-    switch(pollutant){
+    switch(p){
       case "MP-2,5":
       case "MP-10":
         return "µg/m³";
@@ -88,33 +87,32 @@ document.addEventListener("DOMContentLoaded", function () {
     const res = await fetch("datos_sinca.json");
     const data = await res.json();
 
-    DATA = {
-      "MP-2,5": [],
-      "MP-10": [],
-      "NO2": [],
-      "CO": [],
-      "O3": []
-    };
+    STATIONS = {};
 
     data.forEach(station => {
 
       const { nombre, latitud, longitud, realtime } = station;
+
+      if(!nombre || !latitud || !longitud) return;
+
+      if(!STATIONS[nombre]){
+        STATIONS[nombre] = {
+          name: nombre,
+          lat: latitud,
+          lon: longitud,
+          values: {}
+        };
+      }
 
       realtime?.forEach(r => {
 
         const value = getValue(r);
         if(value === null) return;
 
-        const pollutant = getPollutant(r.name);
+        const pollutant = getPollutant(r.name || r.parameter || "");
         if(!pollutant) return;
 
-        DATA[pollutant].push({
-          station: nombre,
-          lat: latitud,
-          lon: longitud,
-          value,
-          time: r.datetime || ""
-        });
+        STATIONS[nombre].values[pollutant] = value;
 
       });
 
@@ -123,76 +121,70 @@ document.addEventListener("DOMContentLoaded", function () {
     render();
   }
 
-  /* ---------------- RENDER (FIXED) ---------------- */
+  /* ---------------- RENDER ---------------- */
 
   function render(){
 
-    // 🔥 FIX CLAVE: reset real del layer (evita bugs de "TODOS")
-    map.removeLayer(layer);
-    layer = L.layerGroup().addTo(map);
+    layer.clearLayers();
 
-    let pollutantsToRender =
-      CURRENT_FILTER === "ALL"
-        ? Object.keys(DATA).filter(k => DATA[k].length)
-        : [CURRENT_FILTER];
+    const stations = Object.values(STATIONS);
 
-    let rankingHTML = "";
+    let processed = stations.map(s => {
 
-    pollutantsToRender.forEach(p => {
+      let values = Object.entries(s.values);
 
-      const list = DATA[p] || [];
-      if(list.length === 0) return;
+      if(CURRENT_FILTER !== "ALL"){
+        values = values.filter(v => v[0] === CURRENT_FILTER);
+      }
 
-      /* MAPA */
-      list.forEach(item => {
+      if(values.length === 0) return null;
 
-        const markerKey = `${item.station}-${p}`;
+      const worst = Math.max(...values.map(v => v[1]));
 
-        L.circleMarker([item.lat, item.lon], {
-          radius: 7,
-          color: "#000",
-          fillColor: color(item.value),
-          fillOpacity: 0.85
-        }).addTo(layer)
-        .bindPopup(
-          `<b>${item.station}</b><br>
-           ${p}: ${item.value} ${getUnit(p)}<br>
-           <small>${item.time}</small>`
-        );
+      return {
+        ...s,
+        values,
+        worst
+      };
 
-      });
+    }).filter(Boolean);
 
-      /* RANKING */
-      const sorted = [...list].sort((a,b)=>b.value-a.value);
+    /* MAPA */
+    processed.forEach(s => {
 
-      rankingHTML += `
-        <h4>${p}</h4>
-        ${sorted.slice(0,5).map(i=>`
-          <div class="card">
-            <b>${i.station}</b><br>
-            ${i.value} ${getUnit(p)}
-          </div>
-        `).join("")}
-      `;
+      L.circleMarker([s.lat, s.lon], {
+        radius: 8,
+        color: "#000",
+        fillColor: color(s.worst),
+        fillOpacity: 0.85
+      }).addTo(layer)
+      .bindPopup(
+        `<b>${s.name}</b><hr>` +
+        s.values.map(v =>
+          `${v[0]}: ${v[1]} ${getUnit(v[0])}<br>`
+        ).join("")
+      );
+
     });
 
-    document.getElementById("ranking").innerHTML = rankingHTML;
+    /* RANKING */
+    const ranking = [...processed].sort((a,b)=>b.worst-a.worst);
+
+    document.getElementById("ranking").innerHTML =
+      ranking.slice(0,10).map(s => `
+        <div class="card">
+          <b>${s.name}</b><br>
+          peor valor: ${s.worst}
+        </div>
+      `).join("");
 
     /* ALERTAS */
-    let alerts = [];
-
-    Object.keys(DATA).forEach(p => {
-      DATA[p].forEach(i => {
-        if(i.value > 100){
-          alerts.push({...i, pollutant:p});
-        }
-      });
-    });
+    const alerts = ranking.filter(s => s.worst > 100);
 
     document.getElementById("alerts").innerHTML =
       alerts.map(a => `
         <div class="alert">
-          ⚠️ ${a.station} - ${a.pollutant}: ${a.value} ${getUnit(a.pollutant)}
+          ⚠️ ${a.name} (${a.worst})
         </div>
       `).join("");
   }
