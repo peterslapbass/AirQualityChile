@@ -9,9 +9,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let layer = L.layerGroup().addTo(map);
 
   let DATA = [];
-  let FILTERED = [];
 
-  // ---------------- NORMALIZACIÓN ----------------
+  // ---------------- NORMALIZACIÓN FUERTE ----------------
 
   function normalize(text) {
     if (!text) return "";
@@ -25,44 +24,45 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  // ---------------- IDENTIFICADOR CONTAMINANTE ----------------
+  // ---------------- KEY ROBUSTO ----------------
 
-  function getPollutantKey(name) {
+  function getKey(name, code) {
 
-    const n = normalize(name);
+    const n = normalize(name + " " + code);
 
     if (n.includes("mp-2") || n.includes("pm25")) return "PM25";
     if (n.includes("mp-10") || n.includes("pm10")) return "PM10";
 
-    if (n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
-    if (n.includes("monoxido de carbono") || n.includes("co")) return "CO";
-    if (n.includes("ozono") || n.includes("o3")) return "O3";
-    if (n.includes("dioxido de azufre") || n.includes("so2")) return "SO2";
+    if (n.includes("no2") || n.includes("dioxido de nitrogeno")) return "NO2";
+    if (n.includes("o3") || n.includes("ozono")) return "O3";
+    if (n.includes("co") || n.includes("monoxido de carbono")) return "CO";
+    if (n.includes("so2") || n.includes("dioxido de azufre")) return "SO2";
 
     return "OTHER";
   }
 
-  // ---------------- NUMERO ----------------
+  // ---------------- EXTRACCIÓN SEGURA ----------------
 
-  function getNumber(v) {
-    const m = String(v).match(/(\d+(\.\d+)?)/);
+  function getNumber(raw) {
+    if (raw === null || raw === undefined) return null;
+
+    const str = String(raw);
+
+    if (str.includes("--")) return null;
+
+    const m = str.match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
   // ---------------- UNIDADES ----------------
 
-  function getUnit(r) {
+  function getUnit(key) {
 
-    const name = normalize(r?.name);
-
-    if (name.includes("mp-2") || name.includes("mp-10") || name.includes("pm25") || name.includes("pm10")) {
-      return "µg/m³";
-    }
-
-    if (name.includes("monoxido de carbono")) return "ppm";
-    if (name.includes("dioxido de nitrogeno")) return "ppbv";
-    if (name.includes("ozono")) return "ppbv";
-    if (name.includes("dioxido de azufre")) return "ppbv";
+    if (key === "PM25" || key === "PM10") return "µg/m³";
+    if (key === "NO2") return "ppbv";
+    if (key === "CO") return "ppmv";
+    if (key === "O3") return "ppbv";
+    if (key === "SO2") return "ppbv";
 
     return "";
   }
@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // ---------------- LOAD DATA ----------------
+  // ---------------- LOAD ----------------
 
   async function loadData() {
 
@@ -101,13 +101,18 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const value = getNumber(raw);
+
+        // 👇 IMPORTANTE: NO eliminar si no hay valor numérico aún
+        // solo lo marcamos pero lo dejamos pasar si quieres debug
         if (value === null) return;
+
+        const key = getKey(r.name, r.code);
 
         values.push({
           name: r.name || r.code,
-          key: getPollutantKey(r.name || r.code),
+          key,
           value,
-          unit: getUnit(r),
+          unit: getUnit(key),
           time: r.datetime || ""
         });
 
@@ -125,13 +130,13 @@ document.addEventListener("DOMContentLoaded", function () {
     render();
   }
 
-  // ---------------- RENDER GENERAL ----------------
+  // ---------------- RENDER ----------------
 
   function render() {
 
     const filter = document.getElementById("filter").value;
 
-    FILTERED = DATA.map(s => {
+    const filtered = DATA.map(s => {
 
       let values = s.values;
 
@@ -146,18 +151,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }).filter(s => s.values.length > 0);
 
-    renderMap();
-    renderRanking();
-    renderAlerts();
+    renderMap(filtered);
+    renderRanking(filtered);
+    renderAlerts(filtered);
   }
 
   // ---------------- MAPA ----------------
 
-  function renderMap() {
+  function renderMap(data) {
 
     layer.clearLayers();
 
-    FILTERED.forEach(s => {
+    data.forEach(s => {
 
       const worst = Math.max(...s.values.map(v => v.value));
 
@@ -180,9 +185,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ---------------- RANKING ----------------
 
-  function renderRanking() {
+  function renderRanking(data) {
 
-    const ranking = FILTERED
+    const ranking = data
       .map(s => ({
         ...s,
         worst: Math.max(...s.values.map(v => v.value))
@@ -200,9 +205,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ---------------- ALERTAS ----------------
 
-  function renderAlerts() {
+  function renderAlerts(data) {
 
-    const alerts = FILTERED.filter(s =>
+    const alerts = data.filter(s =>
       Math.max(...s.values.map(v => v.value)) > 100
     );
 
@@ -214,11 +219,9 @@ document.addEventListener("DOMContentLoaded", function () {
       `).join("");
   }
 
-  // ---------------- EVENTOS ----------------
+  // ---------------- INIT ----------------
 
   document.getElementById("filter").addEventListener("change", render);
-
-  // ---------------- INIT ----------------
 
   loadData();
   setInterval(loadData, 300000);
