@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  // 🗺️ MAPA
   const map = L.map('map').setView([-33.45, -70.66], 5);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -9,68 +8,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🧼 PARSER DE CONTAMINANTES (CLAVE NUEVA)
-  function parseContaminante(texto, fecha) {
+  function getValorRealtime(r) {
 
-    if (!texto || typeof texto !== "string") return null;
+    // 🔥 CASO 1: tableRow (lo más probable)
+    const tr = r?.tableRow;
 
-    // ejemplo:
-    // MP-2,5: 20 µg/m3 40 ICAP
+    if (tr && typeof tr === "object") {
 
-    const match = texto.match(
-      /(.+?):\s*([\d.,]+).*?(\d+)?\s*ICAP/i
-    );
+      // buscar primer número dentro del objeto
+      const values = Object.values(tr);
 
-    if (!match) return null;
-
-    const nombre = match[1].trim();
-    const valor = Number(match[2].replace(",", "."));
-    const icap = match[3] ? Number(match[3]) : null;
-
-    if (isNaN(valor)) return null;
-
-    return {
-      nombre,
-      valor,
-      icap,
-      fecha
-    };
-  }
-
-  // 🔍 extraer fila cruda (AHORA MÁS FLEXIBLE)
-  function extraerUltimoValor(infoRows) {
-
-    if (!Array.isArray(infoRows)) return null;
-
-    for (let i = infoRows.length - 1; i >= 0; i--) {
-
-      const row = infoRows[i];
-
-      const fecha = row?.c?.[0]?.v || "";
-      const texto = row?.c?.[3]?.v; // 👈 ahora es texto completo
-
-      if (texto) {
-        return { texto, fecha };
+      for (let v of values) {
+        const num = Number(v);
+        if (!isNaN(num)) {
+          return num;
+        }
       }
     }
 
     return null;
   }
 
-  // 🎨 color por ICAP (MEJORA REAL)
-  function getColorICAP(icap) {
-
-    if (icap === null || icap === undefined) return "#999999";
-
-    if (icap <= 25) return "#00e400";
-    if (icap <= 50) return "#ffff00";
-    if (icap <= 100) return "#ff7e00";
-    if (icap <= 150) return "#ff0000";
-
-    return "#8f3f97";
-  }
-
-  // 📡 cargar datos
   function cargarDatos() {
 
     fetch("datos_sinca.json")
@@ -83,8 +41,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         data.forEach(estacion => {
 
-          console.log("ESTACION:", estacion); //DEBUG
-          
           const { nombre, latitud, longitud, realtime } = estacion;
 
           if (!latitud || !longitud) return;
@@ -92,8 +48,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
-            console.log("REALTIME:", r); // DEBUG
-            
+            const valor = getValorRealtime(r);
+
+            if (valor === null) return;
+
             const key = `${nombre}|${latitud}|${longitud}`;
 
             if (!popupDict[key]) {
@@ -105,42 +63,25 @@ document.addEventListener("DOMContentLoaded", function () {
               };
             }
 
-            const infoRows = r?.info?.rows;
+            popupDict[key].analisis.push({
+              nombre: r.name,
+              valor,
+              fecha: r.datetime
+            });
 
-            const result = extraerUltimoValor(infoRows);
-
-            if (!result) return;
-
-            // 🧠 PARSE REAL DEL TEXTO
-            const parsed = parseContaminante(result.texto, result.fecha);
-
-            if (!parsed) return;
-
-            popupDict[key].analisis.push(parsed);
           });
-
         });
 
-        // 📍 CREAR MARCADORES
         Object.values(popupDict).forEach(estacion => {
 
           if (!estacion.analisis.length) return;
 
-          // 🔥 color basado en peor ICAP
-          const maxICAP = Math.max(
-            ...estacion.analisis
-              .map(a => a.icap)
-              .filter(v => v !== null)
-          );
-
-          const color = getColorICAP(maxICAP);
+          const color = "#ff7e00";
 
           const popupHTML =
             `<b>${estacion.nombre}</b><hr>` +
             estacion.analisis.map(a =>
-              `<b>${a.nombre}:</b> ${a.valor} ` +
-              (a.icap !== null ? `(ICAP: ${a.icap})` : "") +
-              `<br><small>${a.fecha}</small>`
+              `<b>${a.nombre}:</b> ${a.valor}<br><small>${a.fecha}</small>`
             ).join("<br>");
 
           L.circleMarker([estacion.latitud, estacion.longitud], {
@@ -159,7 +100,6 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(err => console.error("Error cargando datos:", err));
   }
 
-  // 🔄 init + refresh
   cargarDatos();
   setInterval(cargarDatos, 300000);
 
