@@ -8,36 +8,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🧼 decodificador real (clave)
-  function cleanText(text) {
+  function decode(text) {
     const t = document.createElement("textarea");
     t.innerHTML = text || "";
-    return t.value
-      .replace(/--\s*:?\s*hrs\.?/gi, "")
-      .replace(/ICAP/gi, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    return t.value;
   }
 
-  // 🔢 extraer número real
   function extractValor(text) {
     const match = String(text).match(/(\d+(\.\d+)?)/);
     return match ? Number(match[0]) : null;
   }
 
-  // 🧪 unidad limpia
   function extractUnidad(text) {
-    return String(text)
+    return String(text || "")
       .replace(/ICAP/gi, "")
       .replace(/--\s*:?\s*hrs\.?/gi, "")
       .replace(/\d+(\.\d+)?/g, "")
-      .replace(/&#;|⁄/g, "/")
+      .replace(/⁄/g, "/")
       .replace(/\s+/g, " ")
       .trim();
   }
 
   function getColor(v) {
-    if (v === null) return "#999";
+    if (v === null || v === undefined) return "#999";
     if (v <= 25) return "#00e400";
     if (v <= 50) return "#ffff00";
     if (v <= 100) return "#ff7e00";
@@ -67,25 +60,31 @@ document.addEventListener("DOMContentLoaded", function () {
             const rows = r?.info?.rows;
             if (!Array.isArray(rows)) return;
 
-            let raw = null;
+            let valorFinal = null;
+            let unidadFinal = "";
 
-            // 🔥 buscar último valor REAL válido
+            // 🔥 recorrer hacia atrás buscando dato real válido
             for (let i = rows.length - 1; i >= 0; i--) {
 
-              const candidate = cleanText(rows[i]?.c?.[3]?.v);
+              const raw = decode(rows[i]?.c?.[3]?.v);
+              if (!raw) continue;
 
-              const val = extractValor(candidate);
+              const text = raw.toLowerCase();
+
+              // 🚫 eliminar basura SINCA
+              if (text.includes("hrs")) continue;
+              if (text.includes("--")) continue;
+
+              const val = extractValor(raw);
 
               if (val !== null) {
-                raw = candidate;
+                valorFinal = val;
+                unidadFinal = extractUnidad(raw);
                 break;
               }
             }
 
-            if (!raw) return;
-
-            const valor = extractValor(raw);
-            const unidad = extractUnidad(raw);
+            if (valorFinal === null) return;
 
             const key = `${nombre}|${latitud}|${longitud}`;
 
@@ -100,8 +99,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             dict[key].analisis.push({
               nombre: r.name || r.code || "contaminante",
-              valor,
-              unidad,
+              valor: valorFinal,
+              unidad: unidadFinal,
               fecha: r.datetime
             });
 
