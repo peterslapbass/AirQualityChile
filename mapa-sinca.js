@@ -19,7 +19,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if(!t) return "";
     const x = document.createElement("textarea");
     x.innerHTML = t;
-    return x.value.toLowerCase()
+    return x.value
+      .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g,"");
   }
@@ -27,7 +28,8 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ---------------- EXTRAER VALOR ---------------- */
 
   function getValue(r){
-    const m = String(r?.tableRow?.value || "").match(/(\d+(\.\d+)?)/);
+    const raw = r?.tableRow?.value || r?.value || "";
+    const m = String(raw).match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
@@ -37,13 +39,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const n = normalize(name);
 
-    if(n.includes("mp-2,5") || n.includes("pm25")) return "MP-2,5";
+    if(n.includes("mp-2") || n.includes("pm25") || n.includes("pm2")) return "MP-2,5";
     if(n.includes("mp-10") || n.includes("pm10")) return "MP-10";
+
     if(n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
     if(n.includes("monoxido de carbono") || n.includes("co")) return "CO";
+
     if(n.includes("ozono") || n.includes("o3")) return "O3";
 
     return null;
+  }
+
+  /* ---------------- UNIDADES ---------------- */
+
+  function getUnit(pollutant){
+
+    switch(pollutant){
+
+      case "MP-2,5":
+      case "MP-10":
+        return "µg/m³";
+
+      case "NO2":
+        return "ppbv";
+
+      case "CO":
+        return "ppmv";
+
+      case "O3":
+        return "ppbv";
+
+      default:
+        return "";
+    }
   }
 
   /* ---------------- COLOR ---------------- */
@@ -56,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return "purple";
   }
 
-  /* ---------------- LOAD DATA ---------------- */
+  /* ---------------- LOAD ---------------- */
 
   async function load(){
 
@@ -108,21 +136,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
     layer.clearLayers();
 
-    let pollutants = Object.keys(DATA);
+    let pollutantsToRender = [];
 
-    if(CURRENT_FILTER !== "ALL"){
-      pollutants = [CURRENT_FILTER];
+    if(CURRENT_FILTER === "ALL"){
+      pollutantsToRender = ["MP-2,5","MP-10","NO2","CO","O3"];
+    } else {
+      pollutantsToRender = [CURRENT_FILTER];
     }
 
     let rankingHTML = "";
 
-    pollutants.forEach(p => {
+    pollutantsToRender.forEach(p => {
 
-      const list = DATA[p];
+      const list = DATA[p] || [];
 
-      if(!list.length) return;
+      if(list.length === 0) return;
 
-      // MAPA
+      /* MAPA */
       list.forEach(item => {
 
         L.circleMarker([item.lat, item.lon], {
@@ -133,13 +163,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }).addTo(layer)
         .bindPopup(
           `<b>${item.station}</b><br>
-           ${p}: ${item.value}<br>
+           ${p}: ${item.value} ${getUnit(p)}<br>
            <small>${item.time}</small>`
         );
 
       });
 
-      // RANKING
+      /* RANKING */
       const sorted = [...list].sort((a,b)=>b.value-a.value);
 
       rankingHTML += `
@@ -147,7 +177,7 @@ document.addEventListener("DOMContentLoaded", function () {
         ${sorted.slice(0,5).map(i=>`
           <div class="card">
             <b>${i.station}</b><br>
-            ${i.value}
+            ${i.value} ${getUnit(p)}
           </div>
         `).join("")}
       `;
@@ -155,7 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.getElementById("ranking").innerHTML = rankingHTML;
 
-    // ALERTAS
+    /* ALERTAS */
     let alerts = [];
 
     Object.keys(DATA).forEach(p => {
@@ -169,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("alerts").innerHTML =
       alerts.map(a => `
         <div class="alert">
-          ⚠️ ${a.station} - ${a.pollutant}: ${a.value}
+          ⚠️ ${a.station} - ${a.pollutant}: ${a.value} ${getUnit(a.pollutant)}
         </div>
       `).join("");
   }
