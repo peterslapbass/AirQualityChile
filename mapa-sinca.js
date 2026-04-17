@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       s.realtime?.forEach(r => {
-
+        console.log("RAW NAME:", r.name, r);
         const v = getValue(r);
         if(v === null) return;
 
