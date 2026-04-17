@@ -9,91 +9,54 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🧼 decode HTML entities
+  // 🧼 decode HTML
   function decodeHtml(text) {
     const txt = document.createElement("textarea");
     txt.innerHTML = text;
     return txt.value;
   }
 
-  // 🔍 extractor robusto SINCA
-  function getValorRealtime(r) {
+  // 🔍 parser robusto SINCA (valor + unidad + ICAP)
+  function parseValor(raw) {
 
-    const rows = r?.info?.rows;
+    if (!raw) return null;
 
-    if (Array.isArray(rows)) {
+    let text = decodeHtml(String(raw));
 
-      for (let i = rows.length - 1; i >= 0; i--) {
+    // limpiar ruido de tiempo
+    text = text.replace(/--:hrs/g, "").trim();
 
-        const row = rows[i];
-        const c = row?.c;
+    // extraer número
+    const match = text.match(/([\d.]+)/);
+    if (!match) return null;
 
-        if (!Array.isArray(c)) continue;
+    const valor = Number(match[1]);
+    if (isNaN(valor)) return null;
 
-        let raw = c[3]?.v;
+    // detectar ICAP (NO eliminar, conservar como flag)
+    const icap = /ICAP/i.test(text);
 
-        if (raw === null || raw === undefined || raw === "") continue;
+    // extraer unidad limpia
+    let unidad = text
+      .replace(match[0], "")
+      .replace(/ICAP/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
 
-        // =========================
-        // CASO STRING (con unidad + basura)
-        // =========================
-        if (typeof raw === "string") {
+    // normalización de símbolos raros SINCA
+    unidad = unidad
+      .replace(/µg⁄mN/g, "µg/m³")
+      .replace(/µg⁄m/g, "µg/m³")
+      .replace(/µg\/mN/g, "µg/m³");
 
-          raw = decodeHtml(raw);
-
-          // 🧼 limpiar basura del SINCA
-          raw = raw.replace(/ICAP/g, "");
-          raw = raw.replace(/--:hrs/g, "");
-          raw = raw.replace(/\s+/g, " ").trim();
-
-          const match = raw.match(/([\d.]+)/);
-
-          if (!match) continue;
-
-          return {
-            valor: Number(match[1]),
-            unidad: raw.replace(/[\d.\s]/g, "").trim() || ""
-          };
-        }
-
-        // =========================
-        // CASO NUMÉRICO DIRECTO
-        // =========================
-        const num = Number(raw);
-
-        if (!isNaN(num) && num !== 0 && num !== 1) {
-          return {
-            valor: num,
-            unidad: ""
-          };
-        }
-      }
-    }
-
-    // =========================
-    // FALLBACK tableRow
-    // =========================
-    const tr = r?.tableRow;
-
-    if (tr && typeof tr === "object") {
-
-      for (let v of Object.values(tr)) {
-
-        const num = Number(v);
-
-        if (!isNaN(num) && num !== 0 && num !== 1) {
-          return {
-            valor: num,
-            unidad: ""
-          };
-        }
-      }
-    }
-
-    return null;
+    return {
+      valor,
+      unidad,
+      icap
+    };
   }
 
-  // 🎨 colores básicos (ICAP futuro)
+  // 🎨 colores simples (puedes evolucionar a ICAP real después)
   function getColor(valor) {
 
     const v = Number(valor);
@@ -126,9 +89,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
-            const result = getValorRealtime(r);
+            const parsed = parseValor(r?.info?.rows?.length ? r.info.rows[r.info.rows.length - 1]?.c?.[3]?.v : null);
 
-            if (!result) return;
+            if (!parsed) return;
 
             const key = `${nombre}|${latitud}|${longitud}`;
 
@@ -143,15 +106,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
             popupDict[key].analisis.push({
               nombre: r.name || r.code || "contaminante",
-              valor: result.valor,
-              unidad: result.unidad,
+              valor: parsed.valor,
+              unidad: parsed.unidad,
+              icap: parsed.icap,
               fecha: r.datetime || ""
             });
 
           });
         });
 
-        // 🧱 crear markers
+        // 📍 markers
         Object.values(popupDict).forEach(estacion => {
 
           if (!estacion.analisis.length) return;
@@ -160,9 +124,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
           const popupHTML =
             `<b>${estacion.nombre}</b><hr>` +
-            estacion.analisis.map(a =>
-              `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}<br><small>${a.fecha}</small>`
-            ).join("<br>");
+            estacion.analisis.map(a => {
+
+              const badge = a.icap ? " 🟡 ICAP" : "";
+
+              return `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}${badge}<br>
+                      <small>${a.fecha}</small>`;
+            }).join("<br>");
 
           L.circleMarker([estacion.latitud, estacion.longitud], {
             radius: 7,
@@ -176,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         });
 
-        console.log("✔ Datos cargados correctamente:", popupDict);
+        console.log("✔ Mapa actualizado correctamente");
 
       })
       .catch(err => console.error("Error cargando datos:", err));
