@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     for (let i = infoRows.length - 1; i >= 0; i--) {
       const row = infoRows[i];
 
-      if (row?.c?.length > 3) {
+      if (row && row.c && row.c.length > 3) {
         const valor = row.c[3]?.v;
 
         if (
@@ -37,13 +37,14 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(res => res.json())
       .then(data => {
 
-        markersLayer.clearLayers(); // limpiar mapa
+        markersLayer.clearLayers();
 
         const popupDict = {};
 
         data.forEach(estacion => {
           const { nombre, latitud, longitud, realtime } = estacion;
 
+          if (!latitud || !longitud) return;
           if (!Array.isArray(realtime)) return;
 
           realtime.forEach(r => {
@@ -58,7 +59,8 @@ document.addEventListener("DOMContentLoaded", function () {
               };
             }
 
-            const valor = extraerUltimoValor(r["info.rows"]);
+            const infoRows = r["info.rows"];
+            const valor = extraerUltimoValor(infoRows);
             const nombreAnalisis = r.name || "";
 
             if (valor !== null) {
@@ -77,17 +79,15 @@ document.addEventListener("DOMContentLoaded", function () {
             estacion.analisis.join("<br>");
 
           L.marker([estacion.latitud, estacion.longitud])
-            .bindPopup(popupHTML)
-            .addTo(markersLayer);
+            .addTo(markersLayer)
+            .bindPopup(popupHTML);
         });
 
       })
-      .catch(err => console.error("Error:", err));
+      .catch(err => console.error("Error cargando datos:", err));
   }
 
-  // 🔥 cargar inicial
   cargarDatos();
 
-  // 🔄 actualizar cada 5 minutos
   setInterval(cargarDatos, 300000);
 });
