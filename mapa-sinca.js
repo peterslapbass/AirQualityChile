@@ -85,19 +85,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
+            // 🚫 FILTRO CRÍTICO SINCA (AQUÍ)
+            const label = (r.name || r.code || "").toLowerCase();
+          
+            if (label.includes("hrs") || label.includes("--")) return;
+          
             const rows = r?.info?.rows;
             if (!Array.isArray(rows) || rows.length === 0) return;
-
+          
             const last = rows[rows.length - 1];
             const raw = last?.c?.[3]?.v;
-
+          
             const valor = extractValor(raw);
             if (valor === null) return;
-
+          
             const unidad = getUnidad(raw);
-
+          
             const key = `${nombre}|${latitud}|${longitud}`;
-
+          
             if (!dict[key]) {
               dict[key] = {
                 nombre,
@@ -106,14 +111,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 analisis: []
               };
             }
-
+          
             dict[key].analisis.push({
               nombre: r.name || r.code || "contaminante",
               valor,
               unidad,
-              fecha: r.datetime // 👈 SOLO UNA FECHA (IMPORTANTE)
+              fecha: r.datetime
             });
-
+          
           });
         });
 
