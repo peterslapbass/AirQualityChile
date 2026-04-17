@@ -25,25 +25,49 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
+  // ---------------- IDENTIFICADOR CONTAMINANTE ----------------
+
+  function getPollutantKey(name) {
+
+    const n = normalize(name);
+
+    if (n.includes("mp-2") || n.includes("pm25")) return "PM25";
+    if (n.includes("mp-10") || n.includes("pm10")) return "PM10";
+
+    if (n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
+    if (n.includes("monoxido de carbono") || n.includes("co")) return "CO";
+    if (n.includes("ozono") || n.includes("o3")) return "O3";
+    if (n.includes("dioxido de azufre") || n.includes("so2")) return "SO2";
+
+    return "OTHER";
+  }
+
+  // ---------------- NUMERO ----------------
+
   function getNumber(v) {
     const m = String(v).match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
+  // ---------------- UNIDADES ----------------
+
   function getUnit(r) {
 
     const name = normalize(r?.name);
 
-    if (name.includes("mp-2,5") || name.includes("pm25")) return "µg/m³";
-    if (name.includes("mp-10") || name.includes("pm10")) return "µg/m³";
+    if (name.includes("mp-2") || name.includes("mp-10") || name.includes("pm25") || name.includes("pm10")) {
+      return "µg/m³";
+    }
 
-    if (name.includes("monoxido de carbono") || name.includes("co")) return "ppmv";
-    if (name.includes("ozono") || name.includes("o3")) return "ppbv";
-    if (name.includes("dioxido de nitrogeno") || name.includes("no2")) return "ppbv";
-    if (name.includes("dioxido de azufre") || name.includes("so2")) return "ppbv";
+    if (name.includes("monoxido de carbono")) return "ppm";
+    if (name.includes("dioxido de nitrogeno")) return "ppbv";
+    if (name.includes("ozono")) return "ppbv";
+    if (name.includes("dioxido de azufre")) return "ppbv";
 
     return "";
   }
+
+  // ---------------- COLOR ----------------
 
   function getColor(v) {
     if (v === null || v === undefined) return "#999";
@@ -54,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // ---------------- CARGA ----------------
+  // ---------------- LOAD DATA ----------------
 
   async function loadData() {
 
@@ -80,7 +104,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (value === null) return;
 
         values.push({
-          name: r.name || r.code || "contaminante",
+          name: r.name || r.code,
+          key: getPollutantKey(r.name || r.code),
           value,
           unit: getUnit(r),
           time: r.datetime || ""
@@ -100,21 +125,18 @@ document.addEventListener("DOMContentLoaded", function () {
     render();
   }
 
-  // ---------------- RENDER ÚNICO ----------------
+  // ---------------- RENDER GENERAL ----------------
 
   function render() {
 
     const filter = document.getElementById("filter").value;
 
-    // 🔥 UNA SOLA FUENTE DE VERDAD
     FILTERED = DATA.map(s => {
 
       let values = s.values;
 
       if (filter !== "ALL") {
-        values = values.filter(v =>
-          normalize(v.name).includes(normalize(filter))
-        );
+        values = values.filter(v => v.key === filter);
       }
 
       return {
@@ -144,7 +166,8 @@ document.addEventListener("DOMContentLoaded", function () {
         color: "#000",
         fillColor: getColor(worst),
         fillOpacity: 0.85
-      }).addTo(layer)
+      })
+      .addTo(layer)
       .bindPopup(
         `<b>${s.name}</b><hr>` +
         s.values.map(v =>
@@ -164,7 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
         ...s,
         worst: Math.max(...s.values.map(v => v.value))
       }))
-      .sort((a,b) => b.worst - a.worst);
+      .sort((a, b) => b.worst - a.worst);
 
     document.getElementById("ranking").innerHTML =
       ranking.map(s => `
