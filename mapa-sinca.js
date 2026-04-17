@@ -8,8 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // ---------------- NORMALIZAR ----------------
-
+  // 🔧 NORMALIZADOR (HTML + acentos + minúsculas)
   function normalize(text) {
     if (!text) return "";
 
@@ -22,52 +21,29 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  // ---------------- KEY ROBUSTO ----------------
-
-  function getKey(name, code) {
-
-    const n = normalize(`${name || ""} ${code || ""}`);
-
-    // MP
-    if (n.includes("mp-2") || n.includes("pm2") || n.includes("pm25")) return "PM25";
-    if (n.includes("mp-10") || n.includes("pm10")) return "PM10";
-
-    // gases
-    if (n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
-    if (n.includes("monoxido de carbono") || n.includes("co")) return "CO";
-    if (n.includes("ozono") || n.includes("o3")) return "O3";
-    if (n.includes("dioxido de azufre") || n.includes("so2")) return "SO2";
-
-    return "UNKNOWN";
-  }
-
-  // ---------------- NÚMERO ----------------
-
+  // 🔢 extraer número
   function getNumber(v) {
-    if (v === null || v === undefined) return null;
-
     const m = String(v).match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
-  // ---------------- UNIDADES (FORZADAS Y SEGURAS) ----------------
+  // 🧪 unidad por contaminante (ROBUSTA)
+  function getUnit(r) {
 
-  function getUnit(key) {
+    const name = normalize(r?.name);
 
-    const map = {
-      PM25: "µg/m³",
-      PM10: "µg/m³",
-      NO2: "ppbv",
-      CO: "ppmv",
-      O3: "ppbv",
-      SO2: "ppbv"
-    };
+    if (name.includes("mp-2,5") || name.includes("pm25")) return "µg/m³";
+    if (name.includes("mp-10") || name.includes("pm10")) return "µg/m³";
 
-    return map[key] || "";
+    if (name.includes("monoxido de carbono") || name.includes("co")) return "ppmv";
+    if (name.includes("ozono") || name.includes("o3")) return "ppbv";
+    if (name.includes("dioxido de nitrogeno") || name.includes("no2")) return "ppbv";
+    if (name.includes("dioxido de azufre") || name.includes("so2")) return "ppbv";
+
+    return "";
   }
 
-  // ---------------- COLOR ----------------
-
+  // 🎨 colores básicos
   function getColor(v) {
     if (v === null || v === undefined) return "#999";
     if (v <= 25) return "#00e400";
@@ -77,99 +53,95 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // ---------------- LOAD ----------------
+  // 📡 carga datos
+  function cargarDatos() {
 
-  async function loadData() {
+    fetch("datos_sinca.json")
+      .then(r => r.json())
+      .then(data => {
 
-    const res = await fetch("datos_sinca.json");
-    const data = await res.json();
+        markersLayer.clearLayers();
 
-    const parsed = [];
+        const estaciones = {};
 
-    data.forEach(station => {
+        data.forEach(estacion => {
 
-      const realtime = station.realtime || [];
+          const { nombre, latitud, longitud, realtime } = estacion;
 
-      realtime.forEach(r => {
+          if (!latitud || !longitud) return;
+          if (!Array.isArray(realtime)) return;
 
-        let raw = "";
+          realtime.forEach(r => {
 
-        if (r?.tableRow?.value !== undefined) {
-          raw = r.tableRow.value;
-        } else if (r?.info?.rows?.length) {
-          const last = r.info.rows[r.info.rows.length - 1];
-          raw = last?.c?.[3]?.v;
-        }
+            let raw = "";
 
-        const value = getNumber(raw);
-        if (value === null) return;
+            // 🔍 extracción flexible
+            if (r?.tableRow?.value !== undefined) {
+              raw = r.tableRow.value;
+            } else if (r?.info?.rows?.length) {
+              const last = r.info.rows[r.info.rows.length - 1];
+              raw = last?.c?.[3]?.v;
+            } else if (typeof r?.value !== "undefined") {
+              raw = r.value;
+            }
 
-        const key = getKey(r.name, r.code);
-        const unit = getUnit(key);
+            const valor = getNumber(raw);
+            if (valor === null) return;
 
-        parsed.push({
-          station: station.nombre,
-          lat: station.latitud,
-          lon: station.longitud,
-          name: r.name,
-          value,
-          unit,
-          key,
-          time: r.datetime || ""
+            const unit = getUnit(r);
+
+            const key = `${nombre}|${latitud}|${longitud}`;
+
+            if (!estaciones[key]) {
+              estaciones[key] = {
+                nombre,
+                latitud,
+                longitud,
+                analisis: []
+              };
+            }
+
+            estaciones[key].analisis.push({
+              nombre: r.name || r.code || "contaminante",
+              valor,
+              unidad: unit,
+              fecha: r.datetime || ""
+            });
+
+          });
         });
 
-      });
+        // 📍 render markers
+        Object.values(estaciones).forEach(est => {
 
-    });
+          if (!est.analisis.length) return;
 
-    render(parsed);
-  }
+          const color = getColor(est.analisis[0].valor);
 
-  // ---------------- RENDER ----------------
+          const popup =
+            `<b>${est.nombre}</b><hr>` +
+            est.analisis.map(a =>
+              `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}<br>
+               <small>${a.fecha}</small>`
+            ).join("<br>");
 
-  function render(data) {
+          L.circleMarker([est.latitud, est.longitud], {
+            radius: 7,
+            color: "#000",
+            weight: 1,
+            fillColor: color,
+            fillOpacity: 0.85
+          })
+          .addTo(markersLayer)
+          .bindPopup(popup);
 
-    markersLayer.clearLayers();
+        });
 
-    const grouped = {};
-
-    data.forEach(d => {
-
-      const k = `${d.station}|${d.lat}|${d.lon}`;
-
-      if (!grouped[k]) {
-        grouped[k] = {
-          station: d.station,
-          lat: d.lat,
-          lon: d.lon,
-          values: []
-        };
-      }
-
-      grouped[k].values.push(d);
-    });
-
-    Object.values(grouped).forEach(s => {
-
-      const worst = Math.max(...s.values.map(v => v.value));
-
-      L.circleMarker([s.lat, s.lon], {
-        radius: 7,
-        color: "#000",
-        fillColor: getColor(worst),
-        fillOpacity: 0.85
       })
-      .addTo(markersLayer)
-      .bindPopup(
-        `<b>${s.station}</b><hr>` +
-        s.values.map(v =>
-          `${v.name}: ${v.value} ${v.unit}<br><small>${v.time}</small>`
-        ).join("<br>")
-      );
-
-    });
+      .catch(console.error);
   }
 
-  loadData();
+  cargarDatos();
+  setInterval(cargarDatos, 300000);
 
 });
