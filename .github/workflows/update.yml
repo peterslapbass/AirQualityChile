@@ -1,0 +1,40 @@
+name: Actualizar datos SINCA
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # cada 10 minutos
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repo
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Instalar requests
+        run: pip install requests
+
+      - name: Descargar datos SINCA
+        run: |
+          python - <<EOF
+          import requests, json
+          url = "https://sinca.mma.gob.cl/index.php/json/listadomapa2k19"
+          data = requests.get(url).json()
+          with open("datos_sinca.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, ensure_ascii=False)
+          EOF
+
+      - name: Commit y push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add datos_sinca.json
+          git commit -m "Actualiza datos SINCA" || echo "Sin cambios"
+          git push
