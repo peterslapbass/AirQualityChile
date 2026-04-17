@@ -6,9 +6,13 @@ document.addEventListener("DOMContentLoaded", function () {
     attribution: '&copy; OpenStreetMap & CartoDB'
   }).addTo(map);
 
-  let markersLayer = L.layerGroup().addTo(map);
+  let layer = L.layerGroup().addTo(map);
 
-  // 🔧 NORMALIZADOR (HTML + acentos + minúsculas)
+  let DATA = [];
+  let FILTERED = [];
+
+  // ---------------- NORMALIZACIÓN ----------------
+
   function normalize(text) {
     if (!text) return "";
 
@@ -21,13 +25,11 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  // 🔢 extraer número
   function getNumber(v) {
     const m = String(v).match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
-  // 🧪 unidad por contaminante (ROBUSTA)
   function getUnit(r) {
 
     const name = normalize(r?.name);
@@ -43,7 +45,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return "";
   }
 
-  // 🎨 colores básicos
   function getColor(v) {
     if (v === null || v === undefined) return "#999";
     if (v <= 25) return "#00e400";
@@ -53,95 +54,150 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // 📡 carga datos
-  function cargarDatos() {
+  // ---------------- CARGA ----------------
 
-    fetch("datos_sinca.json")
-      .then(r => r.json())
-      .then(data => {
+  async function loadData() {
 
-        markersLayer.clearLayers();
+    const res = await fetch("datos_sinca.json");
+    const data = await res.json();
 
-        const estaciones = {};
+    DATA = data.map(estacion => {
 
-        data.forEach(estacion => {
+      const values = [];
 
-          const { nombre, latitud, longitud, realtime } = estacion;
+      (estacion.realtime || []).forEach(r => {
 
-          if (!latitud || !longitud) return;
-          if (!Array.isArray(realtime)) return;
+        let raw = "";
 
-          realtime.forEach(r => {
+        if (r?.tableRow?.value !== undefined) {
+          raw = r.tableRow.value;
+        } else if (r?.info?.rows?.length) {
+          const last = r.info.rows[r.info.rows.length - 1];
+          raw = last?.c?.[3]?.v;
+        }
 
-            let raw = "";
+        const value = getNumber(raw);
+        if (value === null) return;
 
-            // 🔍 extracción flexible
-            if (r?.tableRow?.value !== undefined) {
-              raw = r.tableRow.value;
-            } else if (r?.info?.rows?.length) {
-              const last = r.info.rows[r.info.rows.length - 1];
-              raw = last?.c?.[3]?.v;
-            } else if (typeof r?.value !== "undefined") {
-              raw = r.value;
-            }
-
-            const valor = getNumber(raw);
-            if (valor === null) return;
-
-            const unit = getUnit(r);
-
-            const key = `${nombre}|${latitud}|${longitud}`;
-
-            if (!estaciones[key]) {
-              estaciones[key] = {
-                nombre,
-                latitud,
-                longitud,
-                analisis: []
-              };
-            }
-
-            estaciones[key].analisis.push({
-              nombre: r.name || r.code || "contaminante",
-              valor,
-              unidad: unit,
-              fecha: r.datetime || ""
-            });
-
-          });
+        values.push({
+          name: r.name || r.code || "contaminante",
+          value,
+          unit: getUnit(r),
+          time: r.datetime || ""
         });
 
-        // 📍 render markers
-        Object.values(estaciones).forEach(est => {
+      });
 
-          if (!est.analisis.length) return;
+      return {
+        name: estacion.nombre,
+        lat: estacion.latitud,
+        lon: estacion.longitud,
+        values
+      };
 
-          const color = getColor(est.analisis[0].valor);
+    }).filter(s => s.values.length > 0);
 
-          const popup =
-            `<b>${est.nombre}</b><hr>` +
-            est.analisis.map(a =>
-              `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}<br>
-               <small>${a.fecha}</small>`
-            ).join("<br>");
-
-          L.circleMarker([est.latitud, est.longitud], {
-            radius: 7,
-            color: "#000",
-            weight: 1,
-            fillColor: color,
-            fillOpacity: 0.85
-          })
-          .addTo(markersLayer)
-          .bindPopup(popup);
-
-        });
-
-      })
-      .catch(console.error);
+    render();
   }
 
-  cargarDatos();
-  setInterval(cargarDatos, 300000);
+  // ---------------- RENDER ÚNICO ----------------
+
+  function render() {
+
+    const filter = document.getElementById("filter").value;
+
+    // 🔥 UNA SOLA FUENTE DE VERDAD
+    FILTERED = DATA.map(s => {
+
+      let values = s.values;
+
+      if (filter !== "ALL") {
+        values = values.filter(v =>
+          normalize(v.name).includes(normalize(filter))
+        );
+      }
+
+      return {
+        ...s,
+        values
+      };
+
+    }).filter(s => s.values.length > 0);
+
+    renderMap();
+    renderRanking();
+    renderAlerts();
+  }
+
+  // ---------------- MAPA ----------------
+
+  function renderMap() {
+
+    layer.clearLayers();
+
+    FILTERED.forEach(s => {
+
+      const worst = Math.max(...s.values.map(v => v.value));
+
+      L.circleMarker([s.lat, s.lon], {
+        radius: 8,
+        color: "#000",
+        fillColor: getColor(worst),
+        fillOpacity: 0.85
+      }).addTo(layer)
+      .bindPopup(
+        `<b>${s.name}</b><hr>` +
+        s.values.map(v =>
+          `${v.name}: ${v.value} ${v.unit}<br><small>${v.time}</small>`
+        ).join("<br>")
+      );
+
+    });
+  }
+
+  // ---------------- RANKING ----------------
+
+  function renderRanking() {
+
+    const ranking = FILTERED
+      .map(s => ({
+        ...s,
+        worst: Math.max(...s.values.map(v => v.value))
+      }))
+      .sort((a,b) => b.worst - a.worst);
+
+    document.getElementById("ranking").innerHTML =
+      ranking.map(s => `
+        <div class="card">
+          <b>${s.name}</b><br>
+          peor valor: ${s.worst}
+        </div>
+      `).join("");
+  }
+
+  // ---------------- ALERTAS ----------------
+
+  function renderAlerts() {
+
+    const alerts = FILTERED.filter(s =>
+      Math.max(...s.values.map(v => v.value)) > 100
+    );
+
+    document.getElementById("alerts").innerHTML =
+      alerts.map(s => `
+        <div class="alert">
+          ⚠️ ${s.name} - alta contaminación
+        </div>
+      `).join("");
+  }
+
+  // ---------------- EVENTOS ----------------
+
+  document.getElementById("filter").addEventListener("change", render);
+
+  // ---------------- INIT ----------------
+
+  loadData();
+  setInterval(loadData, 300000);
 
 });
