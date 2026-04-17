@@ -55,20 +55,15 @@ document.addEventListener("DOMContentLoaded", function () {
   function getUnit(pollutant){
 
     switch(pollutant){
-
       case "MP-2,5":
       case "MP-10":
         return "µg/m³";
-
       case "NO2":
         return "ppbv";
-
       case "CO":
         return "ppmv";
-
       case "O3":
         return "ppbv";
-
       default:
         return "";
     }
@@ -92,8 +87,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const res = await fetch("datos_sinca.json");
     const data = await res.json();
-
-    layer.clearLayers();
 
     DATA = {
       "MP-2,5": [],
@@ -130,30 +123,30 @@ document.addEventListener("DOMContentLoaded", function () {
     render();
   }
 
-  /* ---------------- RENDER ---------------- */
+  /* ---------------- RENDER (FIXED) ---------------- */
 
   function render(){
 
-    layer.clearLayers();
+    // 🔥 FIX CLAVE: reset real del layer (evita bugs de "TODOS")
+    map.removeLayer(layer);
+    layer = L.layerGroup().addTo(map);
 
-    let pollutantsToRender = [];
-
-    if(CURRENT_FILTER === "ALL"){
-      pollutantsToRender = ["MP-2,5","MP-10","NO2","CO","O3"];
-    } else {
-      pollutantsToRender = [CURRENT_FILTER];
-    }
+    let pollutantsToRender =
+      CURRENT_FILTER === "ALL"
+        ? Object.keys(DATA).filter(k => DATA[k].length)
+        : [CURRENT_FILTER];
 
     let rankingHTML = "";
 
     pollutantsToRender.forEach(p => {
 
       const list = DATA[p] || [];
-
       if(list.length === 0) return;
 
       /* MAPA */
       list.forEach(item => {
+
+        const markerKey = `${item.station}-${p}`;
 
         L.circleMarker([item.lat, item.lon], {
           radius: 7,
