@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  console.log("🔥 MAPA SINCA - STATION MODE");
+  console.log("🔥 MAPA SINCA - FINAL STABLE VERSION");
 
   const map = L.map('map').setView([-33.45, -70.66], 5);
 
@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/[\u0300-\u036f]/g,"");
   }
 
-  /* ---------------- EXTRAER VALOR ---------------- */
+  /* ---------------- VALOR ---------------- */
 
   function getValue(r){
     const raw = r?.tableRow?.value || r?.value || "";
@@ -52,7 +52,6 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ---------------- UNIDADES ---------------- */
 
   function getUnit(p){
-
     switch(p){
       case "MP-2,5":
       case "MP-10":
@@ -60,7 +59,7 @@ document.addEventListener("DOMContentLoaded", function () {
       case "NO2":
         return "ppbv";
       case "CO":
-        return "ppmv";
+        return "ppm";
       case "O3":
         return "ppbv";
       default:
@@ -93,8 +92,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const { nombre, latitud, longitud, realtime } = station;
 
-      if(!nombre || !latitud || !longitud) return;
-
       if(!STATIONS[nombre]){
         STATIONS[nombre] = {
           name: nombre,
@@ -112,7 +109,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const pollutant = getPollutant(r.name || r.parameter || "");
         if(!pollutant) return;
 
-        STATIONS[nombre].values[pollutant] = value;
+        // ✔ guardamos valor + hora (FIX CLAVE)
+        STATIONS[nombre].values[pollutant] = {
+          value,
+          time: r.datetime || ""
+        };
 
       });
 
@@ -139,12 +140,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if(values.length === 0) return null;
 
-      const worst = Math.max(...values.map(v => v[1]));
+      const worst = Math.max(...values.map(v => v[1].value));
+
+      const lastUpdate = Math.max(
+        ...values.map(v => new Date(v[1].time || 0).getTime() || 0)
+      );
 
       return {
         ...s,
         values,
-        worst
+        worst,
+        lastUpdate
       };
 
     }).filter(Boolean);
@@ -161,8 +167,12 @@ document.addEventListener("DOMContentLoaded", function () {
       .bindPopup(
         `<b>${s.name}</b><hr>` +
         s.values.map(v =>
-          `${v[0]}: ${v[1]} ${getUnit(v[0])}<br>`
-        ).join("")
+          `${v[0]}: ${v[1].value} ${getUnit(v[0])}<br>
+           <small>${v[1].time}</small><br>`
+        ).join("") +
+        `<hr><small>Última actualización: ${
+          s.lastUpdate ? new Date(s.lastUpdate).toLocaleString() : "N/A"
+        }</small>`
       );
 
     });
@@ -174,7 +184,8 @@ document.addEventListener("DOMContentLoaded", function () {
       ranking.slice(0,10).map(s => `
         <div class="card">
           <b>${s.name}</b><br>
-          peor valor: ${s.worst}
+          peor valor: ${s.worst}<br>
+          <small>${s.lastUpdate ? new Date(s.lastUpdate).toLocaleString() : ""}</small>
         </div>
       `).join("");
 
