@@ -125,21 +125,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
           marker.bindPopup(popupHTML);
 
-          marker.on("popupopen", function () {
-
-            // 🧹 destruir gráfico previo
-            destroyChart(popupId);
-
-            const canvas = document.getElementById(popupId);
+          marker.on("popupopen", function (e) {
+          
+            const popupEl = e.popup.getElement();
+            if (!popupEl) return;
+          
+            const canvas = popupEl.querySelector("canvas");
             if (!canvas) return;
-
+          
             const ctx = canvas.getContext("2d");
-
-            // 📊 datos simulados (REEMPLAZABLE por histórico real luego)
-            const valores = estacion.analisis.map(a => Number(a.valor)).slice(-10);
-            const labels = valores.map((_, i) => `t-${valores.length - i}`);
-
-            window.chartInstances[popupId] = new Chart(ctx, {
+          
+            const id = canvas.id;
+          
+            destroyChart(id);
+          
+            const valores = estacion.analisis
+              .map(a => Number(a.valor))
+              .filter(v => !isNaN(v))
+              .slice(-10);
+          
+            const labels = valores.map((_, i) => `t-${i + 1}`);
+          
+            window.chartInstances[id] = new Chart(ctx, {
               type: "line",
               data: {
                 labels,
@@ -152,12 +159,10 @@ document.addEventListener("DOMContentLoaded", function () {
               },
               options: {
                 responsive: true,
-                plugins: {
-                  legend: { display: true }
-                }
+                animation: false
               }
             });
-
+          
           });
 
           marker.addTo(markersLayer);
