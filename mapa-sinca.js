@@ -14,51 +14,26 @@ document.addEventListener("DOMContentLoaded", function () {
     return t.value;
   }
 
-  // 🔥 SOLO extraer número real sin tocar unidad aún
-  function extractValor(raw) {
-
-    if (!raw) return null;
-
-    let text = decodeHtml(String(raw));
-
-    // limpiar solo basura segura
-    text = text.replace(/ICAP/gi, "").replace(/--:hrs/g, "");
-
-    const match = text.match(/(\d+(\.\d+)?)/);
-    if (!match) return null;
-
-    const valor = Number(match[0]);
-
-    if (isNaN(valor)) return null;
-
-    return valor;
+  // 🔥 extrae número
+  function extractValor(text) {
+    const match = String(text).match(/(\d+(\.\d+)?)/);
+    return match ? Number(match[0]) : null;
   }
 
-  function getUnidad(raw) {
-
-    if (!raw) return "";
-
-    let text = decodeHtml(String(raw));
-
-    text = text
+  // 🧼 extrae unidad limpia
+  function extractUnidad(text) {
+    return String(text)
       .replace(/ICAP/gi, "")
-      .replace(/--:hrs/g, "")
+      .replace(/--\s*:?\s*hrs\.?/gi, "")
       .replace(/\d+(\.\d+)?/g, "")
+      .replace(/⁄/g, "/")
       .replace(/\s+/g, " ")
       .trim();
-
-    // normalización mínima segura
-    text = text
-      .replace(/µg⁄m3/g, "µg/m³")
-      .replace(/µg\/m/g, "µg/m³");
-
-    return text;
   }
 
+  // 🎨 color AQI básico
   function getColor(v) {
-
     if (v === null || v === undefined) return "#999";
-
     if (v <= 25) return "#00e400";
     if (v <= 50) return "#ffff00";
     if (v <= 100) return "#ff7e00";
@@ -85,24 +60,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
-            // 🚫 FILTRO CRÍTICO SINCA (AQUÍ)
-            const label = (r.name || r.code || "").toLowerCase();
-          
-            if (label.includes("hrs") || label.includes("--")) return;
-          
             const rows = r?.info?.rows;
             if (!Array.isArray(rows) || rows.length === 0) return;
-          
-            const last = rows[rows.length - 1];
-            const raw = last?.c?.[3]?.v;
-          
+
+            // 🔥 FIX CLAVE: buscar último valor válido REAL
+            let raw = null;
+
+            for (let i = rows.length - 1; i >= 0; i--) {
+
+              const row = rows[i];
+              const candidate = row?.c?.[3]?.v;
+
+              if (!candidate) continue;
+
+              const label = String(candidate).toLowerCase();
+
+              // 🚫 filtrar basura SINCA
+              if (label.includes("hrs")) continue;
+              if (label.includes("--")) continue;
+
+              raw = candidate;
+              break;
+            }
+
+            if (!raw) return;
+
             const valor = extractValor(raw);
             if (valor === null) return;
-          
-            const unidad = getUnidad(raw);
-          
+
+            const unidad = extractUnidad(raw);
+
             const key = `${nombre}|${latitud}|${longitud}`;
-          
+
             if (!dict[key]) {
               dict[key] = {
                 nombre,
@@ -111,14 +100,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 analisis: []
               };
             }
-          
+
             dict[key].analisis.push({
               nombre: r.name || r.code || "contaminante",
               valor,
               unidad,
               fecha: r.datetime
             });
-          
+
           });
         });
 
@@ -148,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
       })
-      .catch(err => console.error(err));
+      .catch(err => console.error("Error cargando datos:", err));
   }
 
   cargarDatos();
