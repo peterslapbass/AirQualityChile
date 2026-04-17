@@ -9,18 +9,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🎨 COLOR POR CALIDAD (PM estilo simple)
-  function getColor(valor) {
-    const v = Number(valor);
-
-    if (isNaN(v)) return "#999999";
-    if (v <= 25) return "#00e400";
-    if (v <= 50) return "#ffff00";
-    if (v <= 100) return "#ff7e00";
-    if (v <= 150) return "#ff0000";
-    return "#8f3f97";
-  }
-
   // 🔍 extraer último valor válido
   function extraerUltimoValor(infoRows) {
     if (!Array.isArray(infoRows)) return null;
@@ -43,17 +31,19 @@ document.addEventListener("DOMContentLoaded", function () {
     return null;
   }
 
-  // 📊 FUTURO GRÁFICO (placeholder global)
-  window.chartInstances = {};
+  // 🎨 color básico (opcional pero útil)
+  function getColor(valor) {
+    const v = Number(valor);
 
-  function destroyChart(id) {
-    if (window.chartInstances[id]) {
-      window.chartInstances[id].destroy();
-      delete window.chartInstances[id];
-    }
+    if (isNaN(v)) return "#999999";
+    if (v <= 25) return "#00e400";
+    if (v <= 50) return "#ffff00";
+    if (v <= 100) return "#ff7e00";
+    if (v <= 150) return "#ff0000";
+    return "#8f3f97";
   }
 
-  // 📡 CARGA DATOS
+  // 📡 cargar datos
   function cargarDatos() {
 
     fetch("datos_sinca.json")
@@ -97,7 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         });
 
-        // 📍 CREAR MARCADORES
+        // 📍 crear marcadores
         Object.values(popupDict).forEach(estacion => {
 
           if (!estacion.analisis.length) return;
@@ -105,74 +95,29 @@ document.addEventListener("DOMContentLoaded", function () {
           const refValor = estacion.analisis[0].valor;
           const color = getColor(refValor);
 
-          const popupId = `chart-${estacion.nombre.replace(/\s/g, "_")}`;
-
           const popupHTML =
             `<b>${estacion.nombre}</b><hr>` +
             estacion.analisis.map(a =>
               `<b>${a.nombre}:</b> ${a.valor} <br><small>${a.fecha}</small>`
-            ).join("<br>") +
-            `<br><br>
-             <canvas id="${popupId}" width="250" height="120"></canvas>`;
+            ).join("<br>");
 
-          const marker = L.circleMarker([estacion.latitud, estacion.longitud], {
+          L.circleMarker([estacion.latitud, estacion.longitud], {
             radius: 7,
             color: "#000",
             weight: 1,
             fillColor: color,
             fillOpacity: 0.85
-          });
+          })
+          .addTo(markersLayer)
+          .bindPopup(popupHTML);
 
-          marker.bindPopup(popupHTML);
-
-          marker.on("popupopen", function (e) {
-          
-            const popupEl = e.popup.getElement();
-            if (!popupEl) return;
-          
-            const canvas = popupEl.querySelector("canvas");
-            if (!canvas) return;
-          
-            const ctx = canvas.getContext("2d");
-          
-            const id = canvas.id;
-          
-            destroyChart(id);
-          
-            const valores = estacion.analisis
-              .map(a => Number(a.valor))
-              .filter(v => !isNaN(v))
-              .slice(-10);
-          
-            const labels = valores.map((_, i) => `t-${i + 1}`);
-          
-            window.chartInstances[id] = new Chart(ctx, {
-              type: "line",
-              data: {
-                labels,
-                datasets: [{
-                  label: "Evolución",
-                  data: valores,
-                  borderColor: "#ff3b30",
-                  tension: 0.3
-                }]
-              },
-              options: {
-                responsive: true,
-                animation: false
-              }
-            });
-          
-          });
-
-          marker.addTo(markersLayer);
         });
 
       })
       .catch(err => console.error("Error cargando datos:", err));
   }
 
-  // 🔄 inicial + refresh
+  // 🔄 init + refresh
   cargarDatos();
   setInterval(cargarDatos, 300000);
 
