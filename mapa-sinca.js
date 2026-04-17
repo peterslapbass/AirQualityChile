@@ -8,29 +8,51 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  function extraerUltimoValor(infoRows) {
-    if (!Array.isArray(infoRows)) return null;
+function extraerUltimoValor(infoRows) {
+  if (!Array.isArray(infoRows)) return null;
 
-    for (let i = infoRows.length - 1; i >= 0; i--) {
-      const row = infoRows[i];
+  for (let i = infoRows.length - 1; i >= 0; i--) {
+    const row = infoRows[i];
 
-      if (row?.c && row.c.length > 3) {
-        const valor = row.c[3]?.v;
+    if (!row?.c || row.c.length <= 3) continue;
 
-        if (
-          valor !== null &&
-          valor !== undefined &&
-          valor !== 0 &&
-          valor !== "0" &&
-          valor !== "" &&
-          valor !== "no disponible"
-        ) {
-          return valor;
-        }
+    let valor = row.c[3]?.v;
+
+    // 🔥 limpiar valor
+    if (valor === null || valor === undefined) continue;
+
+    if (typeof valor === "string") {
+      valor = valor.trim().toLowerCase();
+
+      // ❌ descartar valores inválidos comunes
+      if (
+        valor === "" ||
+        valor === "0" ||
+        valor === "no disponible" ||
+        valor === "nd" ||
+        valor === "s/i" ||
+        valor === "-"
+      ) {
+        continue;
       }
+
+      // intentar convertir a número
+      const num = Number(valor.replace(",", "."));
+      if (!isNaN(num) && num !== 0) {
+        return num;
+      }
+
+      continue;
     }
-    return null;
+
+    // ✔️ si es número válido
+    if (typeof valor === "number" && valor !== 0) {
+      return valor;
+    }
   }
+
+  return null;
+}
 
   function cargarDatos() {
     fetch("datos_sinca.json")
