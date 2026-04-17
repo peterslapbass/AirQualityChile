@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const pollutant = getPollutant(r.name || r.parameter || "");
         if(!pollutant) return;
 
-        // ✔ guardamos valor + hora (FIX CLAVE)
+        // guardamos valor + hora por contaminante
         STATIONS[nombre].values[pollutant] = {
           value,
           time: r.datetime || ""
@@ -142,15 +142,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const worst = Math.max(...values.map(v => v[1].value));
 
-      const lastUpdate = Math.max(
-        ...values.map(v => new Date(v[1].time || 0).getTime() || 0)
-      );
-
       return {
         ...s,
         values,
-        worst,
-        lastUpdate
+        worst
       };
 
     }).filter(Boolean);
@@ -167,50 +162,4 @@ document.addEventListener("DOMContentLoaded", function () {
       .bindPopup(
         `<b>${s.name}</b><hr>` +
         s.values.map(v =>
-          `${v[0]}: ${v[1].value} ${getUnit(v[0])}<br>
-           <small>${v[1].time}</small><br>`
-        ).join("") +
-        `<hr><small>Última actualización: ${
-          s.lastUpdate ? new Date(s.lastUpdate).toLocaleString() : "N/A"
-        }</small>`
-      );
-
-    });
-
-    /* RANKING */
-    const ranking = [...processed].sort((a,b)=>b.worst-a.worst);
-
-    document.getElementById("ranking").innerHTML =
-      ranking.slice(0,10).map(s => `
-        <div class="card">
-          <b>${s.name}</b><br>
-          peor valor: ${s.worst}<br>
-          <small>${s.lastUpdate ? new Date(s.lastUpdate).toLocaleString() : ""}</small>
-        </div>
-      `).join("");
-
-    /* ALERTAS */
-    const alerts = ranking.filter(s => s.worst > 100);
-
-    document.getElementById("alerts").innerHTML =
-      alerts.map(a => `
-        <div class="alert">
-          ⚠️ ${a.name} (${a.worst})
-        </div>
-      `).join("");
-  }
-
-  /* ---------------- FILTER ---------------- */
-
-  document.getElementById("filter")
-    .addEventListener("change", (e)=>{
-      CURRENT_FILTER = e.target.value;
-      render();
-    });
-
-  /* ---------------- INIT ---------------- */
-
-  load();
-  setInterval(load, 300000);
-
-});
+          `${v[0]}: ${v[1].value} ${getUnit(v[0])}<br
