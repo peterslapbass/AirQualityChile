@@ -75,6 +75,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
+            console.log("RAW REALTIME OBJ:", r);
+            console.log("NAME:", r?.name);
+            console.log("CODE:", r?.code);
+            console.log("TABLE ROW:", r?.tableRow);
+
             let raw = "";
 
             // extracción flexible
