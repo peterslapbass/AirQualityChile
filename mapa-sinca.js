@@ -14,15 +14,23 @@ document.addEventListener("DOMContentLoaded", function () {
     return t.value;
   }
 
-  // 🔥 extrae número
+  // 🔥 SOLO validar número real (clave)
   function extractValor(text) {
-    const match = String(text).match(/(\d+(\.\d+)?)/);
-    return match ? Number(match[0]) : null;
+    if (!text) return null;
+
+    const clean = decodeHtml(String(text));
+
+    const match = clean.match(/(\d+(\.\d+)?)/);
+    if (!match) return null;
+
+    const value = Number(match[0]);
+
+    return isNaN(value) ? null : value;
   }
 
-  // 🧼 extrae unidad limpia
+  // 🧼 unidad sin romper
   function extractUnidad(text) {
-    return String(text)
+    return String(text || "")
       .replace(/ICAP/gi, "")
       .replace(/--\s*:?\s*hrs\.?/gi, "")
       .replace(/\d+(\.\d+)?/g, "")
@@ -31,9 +39,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .trim();
   }
 
-  // 🎨 color AQI básico
   function getColor(v) {
-    if (v === null || v === undefined) return "#999";
+    if (v === null) return "#999";
     if (v <= 25) return "#00e400";
     if (v <= 50) return "#ffff00";
     if (v <= 100) return "#ff7e00";
@@ -61,33 +68,26 @@ document.addEventListener("DOMContentLoaded", function () {
           realtime.forEach(r => {
 
             const rows = r?.info?.rows;
-            if (!Array.isArray(rows) || rows.length === 0) return;
+            if (!Array.isArray(rows)) return;
 
-            // 🔥 FIX CLAVE: buscar último valor válido REAL
+            // 🔥 buscar último valor válido REAL
             let raw = null;
 
             for (let i = rows.length - 1; i >= 0; i--) {
 
-              const row = rows[i];
-              const candidate = row?.c?.[3]?.v;
+              const candidate = rows[i]?.c?.[3]?.v;
 
-              if (!candidate) continue;
+              const value = extractValor(candidate);
 
-              const label = String(candidate).toLowerCase();
-
-              // 🚫 filtrar basura SINCA
-              if (label.includes("hrs")) continue;
-              if (label.includes("--")) continue;
-
-              raw = candidate;
-              break;
+              if (value !== null) {
+                raw = candidate;
+                break;
+              }
             }
 
             if (!raw) return;
 
             const valor = extractValor(raw);
-            if (valor === null) return;
-
             const unidad = extractUnidad(raw);
 
             const key = `${nombre}|${latitud}|${longitud}`;
@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
       })
-      .catch(err => console.error("Error cargando datos:", err));
+      .catch(console.error);
   }
 
   cargarDatos();
