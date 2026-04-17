@@ -8,18 +8,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  function decode(text) {
-    const t = document.createElement("textarea");
-    t.innerHTML = text || "";
-    return t.value;
+  function cleanText(v) {
+    if (v === null || v === undefined) return "";
+    return String(v)
+      .replace(/ICAP/gi, "")
+      .replace(/--\s*:?\s*hrs\.?/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
-  function extractValor(text) {
+  function getNumber(text) {
     const match = String(text).match(/(\d+(\.\d+)?)/);
     return match ? Number(match[0]) : null;
   }
 
-  function extractUnidad(text) {
+  function getUnit(text) {
     return String(text || "")
       .replace(/ICAP/gi, "")
       .replace(/--\s*:?\s*hrs\.?/gi, "")
@@ -58,33 +61,32 @@ document.addEventListener("DOMContentLoaded", function () {
           realtime.forEach(r => {
 
             const rows = r?.info?.rows;
-            if (!Array.isArray(rows)) return;
 
-            let valorFinal = null;
-            let unidadFinal = "";
+            if (!Array.isArray(rows) || rows.length === 0) return;
 
-            // 🔥 recorrer hacia atrás buscando dato real válido
+            let valor = null;
+            let unidad = "";
+
+            // 🔥 buscar desde el final
             for (let i = rows.length - 1; i >= 0; i--) {
 
-              const raw = decode(rows[i]?.c?.[3]?.v);
-              if (!raw) continue;
+              const raw = rows[i]?.c?.[3]?.v;
+              const text = cleanText(raw);
 
-              const text = raw.toLowerCase();
+              // ⚠️ solo ignorar claramente basura
+              if (!text) continue;
+              if (text.includes("-- : hrs")) continue;
 
-              // 🚫 eliminar basura SINCA
-              if (text.includes("hrs")) continue;
-              if (text.includes("--")) continue;
+              const num = getNumber(text);
 
-              const val = extractValor(raw);
-
-              if (val !== null) {
-                valorFinal = val;
-                unidadFinal = extractUnidad(raw);
+              if (num !== null) {
+                valor = num;
+                unidad = getUnit(text);
                 break;
               }
             }
 
-            if (valorFinal === null) return;
+            if (valor === null) return;
 
             const key = `${nombre}|${latitud}|${longitud}`;
 
@@ -99,9 +101,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             dict[key].analisis.push({
               nombre: r.name || r.code || "contaminante",
-              valor: valorFinal,
-              unidad: unidadFinal,
-              fecha: r.datetime
+              valor,
+              unidad,
+              fecha: r.datetime || ""
             });
 
           });
