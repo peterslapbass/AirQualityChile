@@ -83,6 +83,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         data.forEach(estacion => {
 
+          console.log("ESTACION:", estacion); //DEBUG
+          
           const { nombre, latitud, longitud, realtime } = estacion;
 
           if (!latitud || !longitud) return;
@@ -90,6 +92,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
+            console.log("REALTIME:", r); // DEBUG
+            
             const key = `${nombre}|${latitud}|${longitud}`;
 
             if (!popupDict[key]) {
