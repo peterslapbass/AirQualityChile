@@ -2,6 +2,8 @@
 
 Dashboard interactivo en tiempo real para visualizar contaminantes atmosféricos en Chile, utilizando datos del sistema SINCA. Incluye mapa, filtros por contaminante, ranking de estaciones y alertas automáticas.
 
+https://peterslapbass.github.io/mapa-sinca/
+
 ⸻
 
 🚀 Características
