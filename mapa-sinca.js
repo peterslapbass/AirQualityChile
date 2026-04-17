@@ -9,64 +9,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🧼 NORMALIZACIÓN TIPO PYTHON (PORTADA A JS)
- function normalizarValor(valor) {
-
-  if (valor === null || valor === undefined) return null;
-
-  // si ya es número
-  if (typeof valor === "number") {
-    return isNaN(valor) ? null : valor;
-  }
-
-  // strings
-  if (typeof valor === "string") {
-
-    const limpio = valor.trim().toLowerCase();
-
-    if (
-      limpio === "" ||
-      limpio === "no disponible" ||
-      limpio === "null" ||
-      limpio === "nan"
-    ) return null;
-
-    // intentar convertir
-    const num = Number(limpio);
-
-    if (!isNaN(num)) return num;
-
-    return null;
-  }
-
-  return null;
-}
-  // 🔍 extraer último valor válido (con lógica limpia)
+  // 🔍 extraer último valor válido
   function extraerUltimoValor(infoRows) {
-
     if (!Array.isArray(infoRows)) return null;
 
     for (let i = infoRows.length - 1; i >= 0; i--) {
-
       const row = infoRows[i];
 
+      const valor = row?.c?.[3]?.v;
       const fecha = row?.c?.[0]?.v || "";
-      const valorRaw = row?.c?.[3]?.v;
 
-      const valor = normalizarValor(valorRaw);
-
-      // 🚀 equivalente a lógica Python: solo devolver valores válidos
-      if (valor !== null) {
+      if (
+        valor !== null &&
+        valor !== undefined &&
+        valor !== "" &&
+        valor !== "no disponible"
+      ) {
         return { valor, fecha };
       }
     }
-
     return null;
   }
 
-  // 🎨 color por valor
+  // 🎨 color básico (opcional pero útil)
   function getColor(valor) {
-
     const v = Number(valor);
 
     if (isNaN(v)) return "#999999";
@@ -118,9 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 fecha: result.fecha
               });
             }
-
           });
-
         });
 
         // 📍 crear marcadores
@@ -134,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
           const popupHTML =
             `<b>${estacion.nombre}</b><hr>` +
             estacion.analisis.map(a =>
-              `<b>${a.nombre}:</b> ${a.valor}<br><small>${a.fecha}</small>`
+              `<b>${a.nombre}:</b> ${a.valor} <br><small>${a.fecha}</small>`
             ).join("<br>");
 
           L.circleMarker([estacion.latitud, estacion.longitud], {
