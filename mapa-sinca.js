@@ -9,27 +9,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🔍 EXTRACTOR UNIVERSAL DE VALOR
+  // 🔍 EXTRACTOR ROBUSTO (evita flags tipo "1")
   function getValorRealtime(r) {
 
-    // CASO 1: estructura clásica SINCA (info.rows)
+    // =========================
+    // CASO 1: info.rows (principal)
+    // =========================
     const rows = r?.info?.rows;
 
     if (Array.isArray(rows)) {
 
       for (let i = rows.length - 1; i >= 0; i--) {
 
-        const v = rows[i]?.c?.[3]?.v;
+        const row = rows[i];
+        const c = row?.c;
 
-        const num = Number(v);
+        if (!Array.isArray(c)) continue;
 
-        if (!isNaN(num) && v !== null && v !== "" && v !== undefined) {
+        const valorRaw = c[3]?.v;
+        const num = Number(valorRaw);
+
+        // 🚨 FILTRO CLAVE:
+        // elimina flags típicos (1, 0) y valores inválidos
+        if (
+          !isNaN(num) &&
+          valorRaw !== null &&
+          valorRaw !== "" &&
+          num !== 0 &&
+          num !== 1
+        ) {
           return num;
         }
       }
     }
 
-    // CASO 2: estructura alternativa (tableRow)
+    // =========================
+    // CASO 2: tableRow (fallback)
+    // =========================
     const tr = r?.tableRow;
 
     if (tr && typeof tr === "object") {
@@ -38,7 +54,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const num = Number(v);
 
-        if (!isNaN(num) && num > 0) {
+        if (
+          !isNaN(num) &&
+          num !== 0 &&
+          num !== 1 &&
+          num > 0
+        ) {
           return num;
         }
       }
@@ -47,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return null;
   }
 
-  // 🎨 COLOR SIMPLE (puedes mejorar luego con ICAP real)
+  // 🎨 COLOR SIMPLE (puedes mejorar a ICAP después)
   function getColor(valor) {
 
     const v = Number(valor);
@@ -129,7 +150,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         });
 
-        console.log("✔ Datos cargados:", popupDict);
+        console.log("✔ Datos cargados correctamente:", popupDict);
 
       })
       .catch(err => console.error("Error cargando datos:", err));
