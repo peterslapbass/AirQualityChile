@@ -21,9 +21,22 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function getValue(r){
-    const raw = r?.tableRow?.value || r?.value || "";
-    const m = String(raw).match(/(\d+(\.\d+)?)/);
-    return m ? Number(m[0]) : null;
+  
+    let raw =
+      r?.tableRow?.value ??
+      r?.value;
+  
+    // fallback profundo SINCA
+    if(raw === undefined && r?.info?.rows?.length){
+  
+      const last = r.info.rows[r.info.rows.length - 1];
+  
+      raw = last?.c?.[3]?.v;
+    }
+  
+    const num = String(raw).match(/(\d+(\.\d+)?)/);
+  
+    return num ? Number(num[0]) : null;
   }
 
   function getPollutant(name){
