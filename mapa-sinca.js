@@ -84,7 +84,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const v = getValue(r);
         if(v === null) return;
 
-        const p = getPollutant(r.name);
+        const p = getPollutant(
+          r.name ||
+          r.parameter ||
+          r.tableRow?.parameter ||
+          ""
+        );
+        
         if(!p) return;
 
         STATIONS[name].values[p] = v;
