@@ -8,42 +8,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // -----------------------------
-  // 🧼 LIMPIEZA DE TEXTO
-  // -----------------------------
-  function clean(text) {
-    if (!text) return "";
-    return String(text)
+  function clean(t) {
+    if (!t) return "";
+    return String(t)
       .replace(/ICAP/gi, "")
       .replace(/--\s*:?\s*hrs\.?/gi, "")
-      .replace(/\s+/g, " ")
       .trim();
   }
 
-  // -----------------------------
-  // 🔢 EXTRAER VALOR
-  // -----------------------------
-  function getValue(text) {
-    const match = String(text).match(/(\d+(\.\d+)?)/);
-    return match ? Number(match[0]) : null;
+  function getNumber(t) {
+    const m = String(t).match(/(\d+(\.\d+)?)/);
+    return m ? Number(m[0]) : null;
   }
 
-  // -----------------------------
-  // 🧪 EXTRAER UNIDAD
-  // -----------------------------
-  function getUnit(text) {
-    return String(text)
+  function getUnit(t) {
+    return String(t)
       .replace(/ICAP/gi, "")
       .replace(/--\s*:?\s*hrs\.?/gi, "")
       .replace(/\d+(\.\d+)?/g, "")
-      .replace(/⁄/g, "/")
       .replace(/\s+/g, " ")
       .trim();
   }
 
-  // -----------------------------
-  // 🎨 COLOR ICA SIMPLE
-  // -----------------------------
   function getColor(v) {
     if (v === null || v === undefined) return "#999";
     if (v <= 25) return "#00e400";
@@ -53,9 +39,15 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // -----------------------------
-  // 📡 CARGA DE DATOS
-  // -----------------------------
+  function extractRows(r) {
+    return (
+      r?.info?.rows ||
+      r?.tableRow ||
+      r?.info?.tableRow ||
+      []
+    );
+  }
+
   function cargarDatos() {
 
     fetch("datos_sinca.json")
@@ -75,34 +67,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
-            const rows = r?.info?.rows;
+            const rows = extractRows(r);
             if (!Array.isArray(rows) || rows.length === 0) return;
 
-            let valorFinal = null;
-            let unidadFinal = "";
+            let valor = null;
+            let unidad = "";
 
-            // 🔥 buscar último valor REAL válido
+            // 🔥 buscar desde el final
             for (let i = rows.length - 1; i >= 0; i--) {
 
-              const raw = rows[i]?.c?.[3]?.v;
+              const row = rows[i];
+
+              const raw =
+                row?.c?.[3]?.v ??
+                row?.c?.[2]?.v ??
+                row?.c?.[1]?.v;
+
               const text = clean(raw);
 
               if (!text) continue;
-
-              // 🚫 eliminar basura SINCA
               if (text.includes("hrs")) continue;
               if (text.includes("--")) continue;
 
-              const valor = getValue(text);
+              const num = getNumber(text);
 
-              if (valor !== null) {
-                valorFinal = valor;
-                unidadFinal = getUnit(text);
+              if (num !== null) {
+                valor = num;
+                unidad = getUnit(text);
                 break;
               }
             }
 
-            if (valorFinal === null) return;
+            if (valor === null) return;
 
             const key = `${nombre}|${latitud}|${longitud}`;
 
@@ -117,17 +113,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
             estaciones[key].analisis.push({
               nombre: r.name || r.code || "contaminante",
-              valor: valorFinal,
-              unidad: unidadFinal,
+              valor,
+              unidad,
               fecha: r.datetime || ""
             });
 
           });
         });
 
-        // -----------------------------
-        // 📍 RENDER MAPA
-        // -----------------------------
         Object.values(estaciones).forEach(est => {
 
           if (!est.analisis.length) return;
@@ -150,15 +143,13 @@ document.addEventListener("DOMContentLoaded", function () {
           })
           .addTo(markersLayer)
           .bindPopup(popup);
+
         });
 
       })
-      .catch(err => console.error("Error cargando datos:", err));
+      .catch(console.error);
   }
 
-  // -----------------------------
-  // 🔄 INIT + REFRESH
-  // -----------------------------
   cargarDatos();
   setInterval(cargarDatos, 300000);
 
