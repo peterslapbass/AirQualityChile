@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  // ---------------- CLAVE CONTAMINANTE ----------------
+  // ---------------- KEY CONTAMINANTE ----------------
 
   function getKey(name, code) {
 
@@ -44,33 +44,23 @@ document.addEventListener("DOMContentLoaded", function () {
     return m ? Number(m[0]) : null;
   }
 
-  // ---------------- UNIDADES FIJAS ----------------
+  // ---------------- UNIDADES FIJAS (IMPORTANTE) ----------------
 
   function getUnit(key) {
 
-    switch (key) {
-      case "PM25":
-      case "PM10":
-        return "µg/m³";
+    const map = {
+      PM25: "µg/m³",
+      PM10: "µg/m³",
+      NO2: "ppbv",
+      CO: "ppmv",
+      O3: "ppbv",
+      SO2: "ppbv"
+    };
 
-      case "NO2":
-        return "ppbv";
-
-      case "CO":
-        return "ppmv";
-
-      case "O3":
-        return "ppbv";
-
-      case "SO2":
-        return "ppbv";
-
-      default:
-        return "";
-    }
+    return map[key] || "";
   }
 
-  // ---------------- COLOR SIMPLE ----------------
+  // ---------------- COLOR ----------------
 
   function getColor(v) {
     if (v === null || v === undefined) return "#999";
@@ -81,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // ---------------- CARGA Y NORMALIZACIÓN ----------------
+  // ---------------- CARGA ----------------
 
   async function loadData() {
 
@@ -92,9 +82,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     data.forEach(station => {
 
-      const realtime = station.realtime || [];
-
-      realtime.forEach(r => {
+      (station.realtime || []).forEach(r => {
 
         let raw = "";
 
@@ -106,7 +94,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const value = getNumber(raw);
-
         if (value === null) return;
 
         const key = getKey(r.name, r.code);
@@ -116,7 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
           lat: station.latitud,
           lon: station.longitud,
           key,
-          name: r.name,
+          name: r.name || r.code,
           value,
           unit: getUnit(key),
           time: r.datetime || ""
@@ -126,12 +113,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-    console.log("DATA NORMALIZADA:", normalized);
-
     renderMap(normalized);
   }
 
-  // ---------------- MAPA (solo validación base) ----------------
+  // ---------------- MAPA ----------------
 
   function renderMap(data) {
 
@@ -172,6 +157,7 @@ document.addEventListener("DOMContentLoaded", function () {
           `${v.name}: ${v.value} ${v.unit}<br><small>${v.time}</small>`
         ).join("<br>")
       );
+
     });
   }
 
