@@ -9,23 +9,25 @@ document.addEventListener("DOMContentLoaded", function () {
   let markersLayer = L.layerGroup().addTo(map);
 
   function getValorRealtime(r) {
-
-    // 🔥 CASO 1: tableRow (lo más probable)
-    const tr = r?.tableRow;
-
-    if (tr && typeof tr === "object") {
-
-      // buscar primer número dentro del objeto
-      const values = Object.values(tr);
-
-      for (let v of values) {
-        const num = Number(v);
-        if (!isNaN(num)) {
-          return num;
-        }
+  
+    const rows = r?.info?.rows;
+  
+    if (!Array.isArray(rows)) return null;
+  
+    // recorrer hacia atrás (último dato válido)
+    for (let i = rows.length - 1; i >= 0; i--) {
+  
+      const row = rows[i];
+  
+      const valorRaw = row?.c?.[3]?.v;
+  
+      const valor = Number(valorRaw);
+  
+      if (!isNaN(valor) && valorRaw !== "" && valorRaw !== null) {
+        return valor;
       }
     }
-
+  
     return null;
   }
 
