@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function cargarDatos() {
-    fetch("https://sinca.mma.gob.cl/index.php/json/listadomapa2k19")
+    fetch("https://api.allorigins.win/raw?url=https://sinca.mma.gob.cl/index.php/json/listadomapa2k19")
       .then(res => res.json())
       .then(data => {
 
