@@ -15,15 +15,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // 🔥 reconstrucción inteligente de unidad
   function getUnit(r) {
-
-    const name = r?.name || "";
-
-    if (name.includes("MP-2,5")) return "µg/m³";
-    if (name.includes("MP-10")) return "µg/m³";
-    if (name.includes("Dióxido de nitrógeno")) return "ppbv";
-    if (name.includes("Monóxido de carbono")) return "ppmv";
-    if (name.includes("Ozono")) return "ppbv";
-
+  
+    const name = (r?.name || "").toLowerCase();
+  
+    // Material particulado
+    if (name.includes("mp-2,5") || name.includes("pm25")) return "µg/m³";
+    if (name.includes("mp-10") || name.includes("pm10")) return "µg/m³";
+  
+    // Gases
+    if (name.includes("monóxido de carbono") || name.includes("co")) return "ppmv";
+    if (name.includes("ozono") || name.includes("o3")) return "ppbv";
+    if (name.includes("dióxido de nitrógeno") || name.includes("no2")) return "ppbv";
+    if (name.includes("dióxido de azufre") || name.includes("so2")) return "ppbv";
+  
+    // fallback
     return "";
   }
 
