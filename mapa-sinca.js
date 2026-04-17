@@ -13,6 +13,20 @@ document.addEventListener("DOMContentLoaded", function () {
     return m ? Number(m[0]) : null;
   }
 
+  // 🔥 reconstrucción inteligente de unidad
+  function getUnit(r) {
+
+    const name = r?.name || "";
+
+    if (name.includes("MP-2,5")) return "µg/m³";
+    if (name.includes("MP-10")) return "µg/m³";
+    if (name.includes("Dióxido de nitrógeno")) return "ppbv";
+    if (name.includes("Monóxido de carbono")) return "ppmv";
+    if (name.includes("Ozono")) return "ppbv";
+
+    return "";
+  }
+
   function getColor(v) {
     if (v === null || v === undefined) return "#999";
     if (v <= 25) return "#00e400";
@@ -41,22 +55,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
-            // 🔥 AQUÍ está la clave: ya viene el valor en texto o tableRow
             let raw = "";
 
             if (r?.tableRow?.value !== undefined) {
               raw = r.tableRow.value;
             } else if (r?.info?.rows?.length) {
-              // fallback viejo
               const last = r.info.rows[r.info.rows.length - 1];
               raw = last?.c?.[3]?.v;
-            } else {
-              // último fallback: intentar name/code (no ideal pero evita vacío)
-              raw = r.name;
             }
 
             const valor = getNumber(raw);
             if (valor === null) return;
+
+            const unit = getUnit(r);
 
             const key = `${nombre}|${latitud}|${longitud}`;
 
@@ -72,6 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
             estaciones[key].analisis.push({
               nombre: r.name || r.code,
               valor,
+              unidad: unit,
               fecha: r.datetime || ""
             });
 
@@ -87,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
           const popup =
             `<b>${est.nombre}</b><hr>` +
             est.analisis.map(a =>
-              `<b>${a.nombre}:</b> ${a.valor}<br>
+              `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}<br>
                <small>${a.fecha}</small>`
             ).join("<br>");
 
