@@ -8,22 +8,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  function cleanText(v) {
-    if (v === null || v === undefined) return "";
-    return String(v)
+  // -----------------------------
+  // 🧼 LIMPIEZA DE TEXTO
+  // -----------------------------
+  function clean(text) {
+    if (!text) return "";
+    return String(text)
       .replace(/ICAP/gi, "")
       .replace(/--\s*:?\s*hrs\.?/gi, "")
       .replace(/\s+/g, " ")
       .trim();
   }
 
-  function getNumber(text) {
+  // -----------------------------
+  // 🔢 EXTRAER VALOR
+  // -----------------------------
+  function getValue(text) {
     const match = String(text).match(/(\d+(\.\d+)?)/);
     return match ? Number(match[0]) : null;
   }
 
+  // -----------------------------
+  // 🧪 EXTRAER UNIDAD
+  // -----------------------------
   function getUnit(text) {
-    return String(text || "")
+    return String(text)
       .replace(/ICAP/gi, "")
       .replace(/--\s*:?\s*hrs\.?/gi, "")
       .replace(/\d+(\.\d+)?/g, "")
@@ -32,6 +41,9 @@ document.addEventListener("DOMContentLoaded", function () {
       .trim();
   }
 
+  // -----------------------------
+  // 🎨 COLOR ICA SIMPLE
+  // -----------------------------
   function getColor(v) {
     if (v === null || v === undefined) return "#999";
     if (v <= 25) return "#00e400";
@@ -41,6 +53,9 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
+  // -----------------------------
+  // 📡 CARGA DE DATOS
+  // -----------------------------
   function cargarDatos() {
 
     fetch("datos_sinca.json")
@@ -49,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         markersLayer.clearLayers();
 
-        const dict = {};
+        const estaciones = {};
 
         data.forEach(estacion => {
 
@@ -61,37 +76,38 @@ document.addEventListener("DOMContentLoaded", function () {
           realtime.forEach(r => {
 
             const rows = r?.info?.rows;
-
             if (!Array.isArray(rows) || rows.length === 0) return;
 
-            let valor = null;
-            let unidad = "";
+            let valorFinal = null;
+            let unidadFinal = "";
 
-            // 🔥 buscar desde el final
+            // 🔥 buscar último valor REAL válido
             for (let i = rows.length - 1; i >= 0; i--) {
 
               const raw = rows[i]?.c?.[3]?.v;
-              const text = cleanText(raw);
+              const text = clean(raw);
 
-              // ⚠️ solo ignorar claramente basura
               if (!text) continue;
-              if (text.includes("-- : hrs")) continue;
 
-              const num = getNumber(text);
+              // 🚫 eliminar basura SINCA
+              if (text.includes("hrs")) continue;
+              if (text.includes("--")) continue;
 
-              if (num !== null) {
-                valor = num;
-                unidad = getUnit(text);
+              const valor = getValue(text);
+
+              if (valor !== null) {
+                valorFinal = valor;
+                unidadFinal = getUnit(text);
                 break;
               }
             }
 
-            if (valor === null) return;
+            if (valorFinal === null) return;
 
             const key = `${nombre}|${latitud}|${longitud}`;
 
-            if (!dict[key]) {
-              dict[key] = {
+            if (!estaciones[key]) {
+              estaciones[key] = {
                 nombre,
                 latitud,
                 longitud,
@@ -99,30 +115,33 @@ document.addEventListener("DOMContentLoaded", function () {
               };
             }
 
-            dict[key].analisis.push({
+            estaciones[key].analisis.push({
               nombre: r.name || r.code || "contaminante",
-              valor,
-              unidad,
+              valor: valorFinal,
+              unidad: unidadFinal,
               fecha: r.datetime || ""
             });
 
           });
         });
 
-        Object.values(dict).forEach(estacion => {
+        // -----------------------------
+        // 📍 RENDER MAPA
+        // -----------------------------
+        Object.values(estaciones).forEach(est => {
 
-          if (!estacion.analisis.length) return;
+          if (!est.analisis.length) return;
 
-          const color = getColor(estacion.analisis[0].valor);
+          const color = getColor(est.analisis[0].valor);
 
           const popup =
-            `<b>${estacion.nombre}</b><hr>` +
-            estacion.analisis.map(a =>
+            `<b>${est.nombre}</b><hr>` +
+            est.analisis.map(a =>
               `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}<br>
                <small>${a.fecha}</small>`
             ).join("<br>");
 
-          L.circleMarker([estacion.latitud, estacion.longitud], {
+          L.circleMarker([est.latitud, est.longitud], {
             radius: 7,
             color: "#000",
             weight: 1,
@@ -131,13 +150,15 @@ document.addEventListener("DOMContentLoaded", function () {
           })
           .addTo(markersLayer)
           .bindPopup(popup);
-
         });
 
       })
-      .catch(console.error);
+      .catch(err => console.error("Error cargando datos:", err));
   }
 
+  // -----------------------------
+  // 🔄 INIT + REFRESH
+  // -----------------------------
   cargarDatos();
   setInterval(cargarDatos, 300000);
 
