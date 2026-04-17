@@ -96,7 +96,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (valor === null) return;
 
             const unidad = getUnit(r.name || r.code);
-
+            console.log("NORMALIZED UNIT INPUT:", r.name || r.code);
+            console.log("UNIT RESULT:", unidad);
             const key = `${nombre}|${latitud}|${longitud}`;
 
             if (!estaciones[key]) {
