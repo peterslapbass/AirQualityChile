@@ -14,7 +14,6 @@ body {
   height: 100vh;
 }
 
-/* SIDEBAR */
 #sidebar {
   width: 340px;
   background: #111;
@@ -25,41 +24,24 @@ body {
 
 h2 { margin-top: 0; }
 
-.filter {
-  margin-bottom: 10px;
-}
+.filter { margin-bottom: 10px; }
 
-button {
-  width: 100%;
-  margin-top: 5px;
-  padding: 8px;
-  cursor: pointer;
-}
-
-/* MAIN */
 #main {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-/* MAP */
 #map {
   flex: 1;
 }
 
-/* RANKING */
 .card {
   background: #1e1e1e;
   margin: 6px 0;
   padding: 8px;
   border-radius: 6px;
-  cursor: pointer;
 }
-
-.bad { border-left: 5px solid red; }
-.med { border-left: 5px solid orange; }
-.good { border-left: 5px solid green; }
 
 .alert {
   background: #330000;
@@ -68,31 +50,28 @@ button {
   border-left: 4px solid red;
 }
 </style>
+
 </head>
 
 <body>
 
 <div id="sidebar">
+  <h2>🌫️ Aire Chile</h2>
 
-<h2>🌫️ Aire Chile</h2>
+  <select id="filter">
+    <option value="ALL">Todos</option>
+    <option value="MP-2,5">MP 2.5</option>
+    <option value="MP-10">MP 10</option>
+    <option value="NO2">NO2</option>
+    <option value="CO">CO</option>
+    <option value="O3">Ozono</option>
+  </select>
 
-<div class="filter">
-<select id="filter">
-  <option value="ALL">Todos</option>
-  <option value="MP-2,5">MP 2.5</option>
-  <option value="MP-10">MP 10</option>
-  <option value="NO2">NO2</option>
-  <option value="CO">CO</option>
-  <option value="O3">Ozono</option>
-</select>
-</div>
+  <h3>⚠️ Alertas</h3>
+  <div id="alerts"></div>
 
-<h3>⚠️ Alertas</h3>
-<div id="alerts"></div>
-
-<h3>📊 Ranking (peor calidad)</h3>
-<div id="ranking"></div>
-
+  <h3>📊 Ranking</h3>
+  <div id="ranking"></div>
 </div>
 
 <div id="main">
@@ -101,168 +80,8 @@ button {
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<script>
-const map = L.map('map').setView([-33.45, -70.66], 5);
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap'
-}).addTo(map);
-
-let layer = L.layerGroup().addTo(map);
-
-let DATA = [];
-
-/* ------------------ UTIL ------------------ */
-
-function normalize(t){
-  if(!t) return "";
-  const x = document.createElement("textarea");
-  x.innerHTML = t;
-  return x.value.toLowerCase().normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"");
-}
-
-function getValue(r){
-  const m = String(r?.tableRow?.value || "").match(/(\d+(\.\d+)?)/);
-  return m ? Number(m[0]) : null;
-}
-
-function getUnit(name){
-  name = normalize(name);
-  if(name.includes("mp-2,5") || name.includes("pm25")) return "µg/m³";
-  if(name.includes("mp-10") || name.includes("pm10")) return "µg/m³";
-  if(name.includes("no2")) return "ppbv";
-  if(name.includes("co")) return "ppmv";
-  if(name.includes("o3")) return "ppbv";
-  return "";
-}
-
-function color(v){
-  if(v<=25) return "green";
-  if(v<=50) return "yellow";
-  if(v<=100) return "orange";
-  if(v<=150) return "red";
-  return "purple";
-}
-
-/* ------------------ LOAD ------------------ */
-
-async function load(){
-  const res = await fetch("datos_sinca.json");
-  const data = await res.json();
-
-  layer.clearLayers();
-  let stations = [];
-
-  data.forEach(s => {
-
-    let values = [];
-
-    s.realtime?.forEach(r => {
-
-      const v = getValue(r);
-      if(v === null) return;
-
-      values.push({
-        name: r.name,
-        value: v,
-        unit: getUnit(r.name),
-        time: r.datetime
-      });
-
-    });
-
-    if(values.length === 0) return;
-
-    const worst = Math.max(...values.map(v=>v.value));
-
-    stations.push({
-      name: s.nombre,
-      lat: s.latitud,
-      lon: s.longitud,
-      values,
-      worst
-    });
-
-  });
-
-  DATA = stations;
-
-  render();
-}
-
-/* ------------------ RENDER ------------------ */
-
-function render(){
-
-  const filter = document.getElementById("filter").value;
-
-  let filtered = DATA;
-
-  if(filter !== "ALL"){
-    filtered = DATA.map(s => {
-      return {
-        ...s,
-        values: s.values.filter(v =>
-          normalize(v.name).includes(normalize(filter))
-        )
-      };
-    }).filter(s => s.values.length);
-  }
-
-  /* MAP */
-  filtered.forEach(s => {
-
-    const c = color(s.worst);
-
-    L.circleMarker([s.lat, s.lon], {
-      radius: 8,
-      color: "#000",
-      fillColor: c,
-      fillOpacity: 0.8
-    }).addTo(layer)
-    .bindPopup(
-      `<b>${s.name}</b><br>` +
-      s.values.map(v =>
-        `${v.name}: ${v.value} ${v.unit}<br><small>${v.time}</small>`
-      ).join("<br>")
-    );
-
-  });
-
-  /* RANKING */
-  const ranking = [...filtered].sort((a,b)=>b.worst-a.worst);
-
-  document.getElementById("ranking").innerHTML =
-    ranking.map(s => `
-      <div class="card ${color(s.worst)}">
-        <b>${s.name}</b><br>
-        peor valor: ${s.worst}
-      </div>
-    `).join("");
-
-  /* ALERTAS */
-  const alerts = ranking.filter(s => s.worst > 100);
-
-  document.getElementById("alerts").innerHTML =
-    alerts.map(s => `
-      <div class="alert">
-        ⚠️ ${s.name} alta contaminación (${s.worst})
-      </div>
-    `).join("");
-
-}
-
-/* ------------------ EVENTS ------------------ */
-
-document.getElementById("filter")
-  .addEventListener("change", render);
-
-/* ------------------ INIT ------------------ */
-
-load();
-setInterval(load, 300000);
-</script>
+<!-- 🔥 TU JS ORIGINAL (SIN CAMBIAR NOMBRE) -->
+<script src="mapa-sinca.js" defer></script>
 
 </body>
 </html>
