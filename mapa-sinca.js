@@ -9,57 +9,56 @@ document.addEventListener("DOMContentLoaded", function () {
   let markersLayer = L.layerGroup().addTo(map);
 
   function decodeHtml(text) {
-    const txt = document.createElement("textarea");
-    txt.innerHTML = text;
-    return txt.value;
+    const t = document.createElement("textarea");
+    t.innerHTML = text;
+    return t.value;
   }
 
-  // 🧼 limpieza fuerte de unidades SINCA
-  function cleanUnidad(u) {
-    if (!u) return "";
-
-    return u
-      .replace(/ICAP/gi, "")
-      .replace(/--:hrs/g, "")
-      .replace(/³/g, "")
-      .replace(/N\b/g, "")
-      .replace(/µg\/m³/g, "µg/m³")
-      .replace(/µg\/m/g, "µg/m³")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  function parseValor(raw, fechaFallback) {
+  // 🔥 SOLO extraer número real sin tocar unidad aún
+  function extractValor(raw) {
 
     if (!raw) return null;
 
     let text = decodeHtml(String(raw));
 
-    text = text.replace(/--:hrs/g, "").trim();
+    // limpiar solo basura segura
+    text = text.replace(/ICAP/gi, "").replace(/--:hrs/g, "");
 
-    const match = text.match(/([\d.]+)/);
+    const match = text.match(/(\d+(\.\d+)?)/);
     if (!match) return null;
 
-    const valor = Number(match[1]);
+    const valor = Number(match[0]);
+
     if (isNaN(valor)) return null;
 
-    let unidad = text
-      .replace(match[0], "")
-      .replace(/ICAP/gi, "")
-      .trim();
-
-    unidad = cleanUnidad(unidad);
-
-    return {
-      valor,
-      unidad,
-      fecha: fechaFallback || ""
-    };
+    return valor;
   }
 
-  function getColor(valor) {
-    const v = Number(valor);
-    if (isNaN(v)) return "#999";
+  function getUnidad(raw) {
+
+    if (!raw) return "";
+
+    let text = decodeHtml(String(raw));
+
+    text = text
+      .replace(/ICAP/gi, "")
+      .replace(/--:hrs/g, "")
+      .replace(/\d+(\.\d+)?/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // normalización mínima segura
+    text = text
+      .replace(/µg⁄m3/g, "µg/m³")
+      .replace(/µg\/m/g, "µg/m³");
+
+    return text;
+  }
+
+  function getColor(v) {
+
+    if (v === null || v === undefined) return "#999";
+
     if (v <= 25) return "#00e400";
     if (v <= 50) return "#ffff00";
     if (v <= 100) return "#ff7e00";
@@ -70,12 +69,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function cargarDatos() {
 
     fetch("datos_sinca.json")
-      .then(res => res.json())
+      .then(r => r.json())
       .then(data => {
 
         markersLayer.clearLayers();
 
-        const popupDict = {};
+        const dict = {};
 
         data.forEach(estacion => {
 
@@ -87,21 +86,20 @@ document.addEventListener("DOMContentLoaded", function () {
           realtime.forEach(r => {
 
             const rows = r?.info?.rows;
-
             if (!Array.isArray(rows) || rows.length === 0) return;
 
-            // 🟢 tomar SOLO último row válido
-            const lastRow = rows[rows.length - 1];
-            const raw = lastRow?.c?.[3]?.v;
+            const last = rows[rows.length - 1];
+            const raw = last?.c?.[3]?.v;
 
-            const parsed = parseValor(raw, r.datetime);
+            const valor = extractValor(raw);
+            if (valor === null) return;
 
-            if (!parsed) return;
+            const unidad = getUnidad(raw);
 
             const key = `${nombre}|${latitud}|${longitud}`;
 
-            if (!popupDict[key]) {
-              popupDict[key] = {
+            if (!dict[key]) {
+              dict[key] = {
                 nombre,
                 latitud,
                 longitud,
@@ -109,23 +107,23 @@ document.addEventListener("DOMContentLoaded", function () {
               };
             }
 
-            popupDict[key].analisis.push({
+            dict[key].analisis.push({
               nombre: r.name || r.code || "contaminante",
-              valor: parsed.valor,
-              unidad: parsed.unidad,
-              fecha: parsed.fecha
+              valor,
+              unidad,
+              fecha: r.datetime // 👈 SOLO UNA FECHA (IMPORTANTE)
             });
 
           });
         });
 
-        Object.values(popupDict).forEach(estacion => {
+        Object.values(dict).forEach(estacion => {
 
           if (!estacion.analisis.length) return;
 
           const color = getColor(estacion.analisis[0].valor);
 
-          const popupHTML =
+          const popup =
             `<b>${estacion.nombre}</b><hr>` +
             estacion.analisis.map(a =>
               `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}<br>
@@ -140,12 +138,12 @@ document.addEventListener("DOMContentLoaded", function () {
             fillOpacity: 0.85
           })
           .addTo(markersLayer)
-          .bindPopup(popupHTML);
+          .bindPopup(popup);
 
         });
 
       })
-      .catch(err => console.error("Error cargando datos:", err));
+      .catch(err => console.error(err));
   }
 
   cargarDatos();
