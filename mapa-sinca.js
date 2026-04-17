@@ -14,33 +14,35 @@ document.addEventListener("DOMContentLoaded", function () {
     for (let i = infoRows.length - 1; i >= 0; i--) {
       const row = infoRows[i];
   
-      if (!row?.c || row.c.length <= 3) continue;
+      if (!row || !row.c) continue;
   
-      let valor = row.c[3]?.v;
+      const celdas = row.c;
   
-      if (valor === null || valor === undefined) continue;
+      if (celdas.length <= 3) continue;
   
-      // 🔹 si es número válido
+      const celda = celdas[3];
+  
+      if (!celda) continue;
+  
+      let valor = celda.v;
+  
+      // 🔹 aceptar números directamente
       if (typeof valor === "number") {
-        if (!isNaN(valor)) return valor;
+        return valor;
       }
   
-      // 🔹 si es string
+      // 🔹 si es string, intentar convertir
       if (typeof valor === "string") {
-        const limpio = valor.trim().toLowerCase();
+        const limpio = valor.trim();
   
-        // solo descartar casos claros
-        if (
-          limpio === "" ||
-          limpio === "no disponible" ||
-          limpio === "nd"
-        ) {
+        if (limpio === "" || limpio.toLowerCase() === "no disponible") {
           continue;
         }
   
-        // intentar convertir
-        const num = Number(limpio.replace(",", "."));
-        if (!isNaN(num)) return num;
+        const num = parseFloat(limpio.replace(",", "."));
+        if (!isNaN(num)) {
+          return num;
+        }
       }
     }
   
