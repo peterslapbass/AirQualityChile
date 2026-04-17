@@ -1,7 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  console.log("🔥 MAPA SINCA ACTIVO");
-
   const map = L.map('map').setView([-33.45, -70.66], 5);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -10,22 +8,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let layer = L.layerGroup().addTo(map);
 
-  let DATA = {};
+  let STATIONS = {};
   let CURRENT_FILTER = "ALL";
-
-  /* ---------------- NORMALIZAR ---------------- */
 
   function normalize(t){
     if(!t) return "";
     const x = document.createElement("textarea");
     x.innerHTML = t;
-    return x.value
-      .toLowerCase()
+    return x.value.toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g,"");
   }
-
-  /* ---------------- EXTRAER VALOR ---------------- */
 
   function getValue(r){
     const raw = r?.tableRow?.value || r?.value || "";
@@ -33,48 +26,30 @@ document.addEventListener("DOMContentLoaded", function () {
     return m ? Number(m[0]) : null;
   }
 
-  /* ---------------- CLASIFICAR CONTAMINANTE ---------------- */
-
   function getPollutant(name){
 
     const n = normalize(name);
 
-    if(n.includes("mp-2") || n.includes("pm25") || n.includes("pm2")) return "MP-2,5";
+    if(n.includes("mp-2") || n.includes("pm25")) return "MP-2,5";
     if(n.includes("mp-10") || n.includes("pm10")) return "MP-10";
-
-    if(n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
-    if(n.includes("monoxido de carbono") || n.includes("co")) return "CO";
-
-    if(n.includes("ozono") || n.includes("o3")) return "O3";
+    if(n.includes("no2")) return "NO2";
+    if(n.includes("co")) return "CO";
+    if(n.includes("o3")) return "O3";
 
     return null;
   }
 
-  /* ---------------- UNIDADES ---------------- */
+  function getUnit(p){
 
-  function getUnit(pollutant){
-
-    switch(pollutant){
-
+    switch(p){
       case "MP-2,5":
-      case "MP-10":
-        return "µg/m³";
-
-      case "NO2":
-        return "ppbv";
-
-      case "CO":
-        return "ppmv";
-
-      case "O3":
-        return "ppbv";
-
-      default:
-        return "";
+      case "MP-10": return "µg/m³";
+      case "NO2": return "ppbv";
+      case "CO": return "ppm";
+      case "O3": return "ppbv";
+      default: return "";
     }
   }
-
-  /* ---------------- COLOR ---------------- */
 
   function color(v){
     if(v <= 25) return "green";
@@ -84,44 +59,35 @@ document.addEventListener("DOMContentLoaded", function () {
     return "purple";
   }
 
-  /* ---------------- LOAD ---------------- */
-
   async function load(){
-
-    console.log("📡 CARGANDO DATOS");
 
     const res = await fetch("datos_sinca.json");
     const data = await res.json();
 
-    layer.clearLayers();
+    STATIONS = {};
 
-    DATA = {
-      "MP-2,5": [],
-      "MP-10": [],
-      "NO2": [],
-      "CO": [],
-      "O3": []
-    };
+    data.forEach(s => {
 
-    data.forEach(station => {
+      const name = s.nombre;
 
-      const { nombre, latitud, longitud, realtime } = station;
+      if(!STATIONS[name]){
+        STATIONS[name] = {
+          name,
+          lat: s.latitud,
+          lon: s.longitud,
+          values: {}
+        };
+      }
 
-      realtime?.forEach(r => {
+      s.realtime?.forEach(r => {
 
-        const value = getValue(r);
-        if(value === null) return;
+        const v = getValue(r);
+        if(v === null) return;
 
-        const pollutant = getPollutant(r.name);
-        if(!pollutant) return;
+        const p = getPollutant(r.name);
+        if(!p) return;
 
-        DATA[pollutant].push({
-          station: nombre,
-          lat: latitud,
-          lon: longitud,
-          value,
-          time: r.datetime || ""
-        });
+        STATIONS[name].values[p] = v;
 
       });
 
@@ -130,89 +96,68 @@ document.addEventListener("DOMContentLoaded", function () {
     render();
   }
 
-  /* ---------------- RENDER ---------------- */
-
   function render(){
 
     layer.clearLayers();
 
-    let pollutantsToRender = [];
+    let ranking = [];
 
-    if(CURRENT_FILTER === "ALL"){
-      pollutantsToRender = ["MP-2,5","MP-10","NO2","CO","O3"];
-    } else {
-      pollutantsToRender = [CURRENT_FILTER];
-    }
+    Object.values(STATIONS).forEach(s => {
 
-    let rankingHTML = "";
+      let vals = Object.entries(s.values);
 
-    pollutantsToRender.forEach(p => {
+      if(CURRENT_FILTER !== "ALL"){
+        vals = vals.filter(v => v[0] === CURRENT_FILTER);
+      }
 
-      const list = DATA[p] || [];
+      if(vals.length === 0) return;
 
-      if(list.length === 0) return;
+      const worst = Math.max(...vals.map(v => v[1]));
 
-      /* MAPA */
-      list.forEach(item => {
+      ranking.push({...s, worst, vals});
 
-        L.circleMarker([item.lat, item.lon], {
-          radius: 7,
-          color: "#000",
-          fillColor: color(item.value),
-          fillOpacity: 0.85
-        }).addTo(layer)
-        .bindPopup(
-          `<b>${item.station}</b><br>
-           ${p}: ${item.value} ${getUnit(p)}<br>
-           <small>${item.time}</small>`
-        );
-
-      });
-
-      /* RANKING */
-      const sorted = [...list].sort((a,b)=>b.value-a.value);
-
-      rankingHTML += `
-        <h4>${p}</h4>
-        ${sorted.slice(0,5).map(i=>`
-          <div class="card">
-            <b>${i.station}</b><br>
-            ${i.value} ${getUnit(p)}
-          </div>
+      const popup = `
+        <b>${s.name}</b><hr>
+        ${vals.map(v => `
+          ${v[0]}: ${v[1]} ${getUnit(v[0])}<br>
         `).join("")}
       `;
+
+      L.circleMarker([s.lat, s.lon], {
+        radius: 8,
+        color: "#000",
+        fillColor: color(worst),
+        fillOpacity: 0.85
+      }).addTo(layer)
+      .bindPopup(popup);
+
     });
 
-    document.getElementById("ranking").innerHTML = rankingHTML;
+    ranking.sort((a,b)=>b.worst-a.worst);
 
-    /* ALERTAS */
-    let alerts = [];
+    document.getElementById("ranking").innerHTML =
+      ranking.slice(0,10).map(s => `
+        <div class="card">
+          <b>${s.name}</b><br>
+          peor valor: ${s.worst}
+        </div>
+      `).join("");
 
-    Object.keys(DATA).forEach(p => {
-      DATA[p].forEach(i => {
-        if(i.value > 100){
-          alerts.push({...i, pollutant:p});
-        }
-      });
-    });
+    let alerts = ranking.filter(s => s.worst > 100);
 
     document.getElementById("alerts").innerHTML =
       alerts.map(a => `
         <div class="alert">
-          ⚠️ ${a.station} - ${a.pollutant}: ${a.value} ${getUnit(a.pollutant)}
+          ⚠️ ${a.name} (${a.worst})
         </div>
       `).join("");
   }
 
-  /* ---------------- FILTER ---------------- */
-
   document.getElementById("filter")
-    .addEventListener("change", (e)=>{
+    .addEventListener("change", e => {
       CURRENT_FILTER = e.target.value;
       render();
     });
-
-  /* ---------------- INIT ---------------- */
 
   load();
   setInterval(load, 300000);
