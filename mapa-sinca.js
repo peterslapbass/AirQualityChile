@@ -8,47 +8,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  function extraerUltimoValor(infoRows) {
+    function extraerUltimoValor(infoRows) {
     if (!Array.isArray(infoRows)) return null;
   
     for (let i = infoRows.length - 1; i >= 0; i--) {
       const row = infoRows[i];
   
-      if (!row || !row.c) continue;
+      if (row?.c && row.c.length > 3) {
+        const valor = row.c[3]?.v;
   
-      const celdas = row.c;
-  
-      if (celdas.length <= 3) continue;
-  
-      const celda = celdas[3];
-  
-      if (!celda) continue;
-  
-      let valor = celda.v;
-  
-      // 🔹 aceptar números directamente
-      if (typeof valor === "number") {
-        return valor;
-      }
-  
-      // 🔹 si es string, intentar convertir
-      if (typeof valor === "string") {
-        const limpio = valor.trim();
-  
-        if (limpio === "" || limpio.toLowerCase() === "no disponible") {
-          continue;
-        }
-  
-        const num = parseFloat(limpio.replace(",", "."));
-        if (!isNaN(num)) {
-          return num;
+        if (
+          valor !== null &&
+          valor !== undefined &&
+          valor !== "" &&
+          valor !== "no disponible"
+        ) {
+          return valor;
         }
       }
     }
-  
     return null;
   }
-
   function cargarDatos() {
     fetch("datos_sinca.json")
       .then(res => res.json())
