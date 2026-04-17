@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // ---------------- NORMALIZACIÓN ----------------
+  // ---------------- NORMALIZAR ----------------
 
   function normalize(text) {
     if (!text) return "";
@@ -22,24 +22,26 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  // ---------------- CLAVE CONTAMINANTE ----------------
+  // ---------------- KEY ROBUSTO ----------------
 
   function getKey(name, code) {
 
-    const n = normalize(name + " " + code);
+    const n = normalize(`${name || ""} ${code || ""}`);
 
-    if (n.includes("mp-2") || n.includes("pm25")) return "PM25";
+    // MP
+    if (n.includes("mp-2") || n.includes("pm2") || n.includes("pm25")) return "PM25";
     if (n.includes("mp-10") || n.includes("pm10")) return "PM10";
 
+    // gases
     if (n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
     if (n.includes("monoxido de carbono") || n.includes("co")) return "CO";
     if (n.includes("ozono") || n.includes("o3")) return "O3";
     if (n.includes("dioxido de azufre") || n.includes("so2")) return "SO2";
 
-    return "OTHER";
+    return "UNKNOWN";
   }
 
-  // ---------------- NÚMERO LIMPIO ----------------
+  // ---------------- NÚMERO ----------------
 
   function getNumber(v) {
     if (v === null || v === undefined) return null;
@@ -48,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return m ? Number(m[0]) : null;
   }
 
-  // ---------------- UNIDADES FIJAS ----------------
+  // ---------------- UNIDADES (FORZADAS Y SEGURAS) ----------------
 
   function getUnit(key) {
 
@@ -75,14 +77,14 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // ---------------- CARGA DATOS ----------------
+  // ---------------- LOAD ----------------
 
   async function loadData() {
 
     const res = await fetch("datos_sinca.json");
     const data = await res.json();
 
-    const normalized = [];
+    const parsed = [];
 
     data.forEach(station => {
 
@@ -103,15 +105,16 @@ document.addEventListener("DOMContentLoaded", function () {
         if (value === null) return;
 
         const key = getKey(r.name, r.code);
+        const unit = getUnit(key);
 
-        normalized.push({
+        parsed.push({
           station: station.nombre,
           lat: station.latitud,
           lon: station.longitud,
-          key,
-          name: r.name || r.code,
+          name: r.name,
           value,
-          unit: getUnit(key),
+          unit,
+          key,
           time: r.datetime || ""
         });
 
@@ -119,12 +122,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-    renderMap(normalized);
+    render(parsed);
   }
 
-  // ---------------- RENDER MAPA ----------------
+  // ---------------- RENDER ----------------
 
-  function renderMap(data) {
+  function render(data) {
 
     markersLayer.clearLayers();
 
@@ -166,8 +169,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
   }
-
-  // ---------------- INIT ----------------
 
   loadData();
 
