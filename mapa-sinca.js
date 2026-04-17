@@ -1,5 +1,6 @@
+alert("MAPA-SINCA ACTIVO");
+
 document.addEventListener("DOMContentLoaded", function () {
-  alert("MAPA-SINCA ACTIVO");
   console.log("✅ SCRIPT CARGADO - DOM READY");
 
   const map = L.map('map').setView([-33.45, -70.66], 5);
