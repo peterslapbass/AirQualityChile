@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  // 🗺️ MAPA
   const map = L.map('map').setView([-33.45, -70.66], 5);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -9,59 +8,58 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🧼 decode HTML
   function decodeHtml(text) {
     const txt = document.createElement("textarea");
     txt.innerHTML = text;
     return txt.value;
   }
 
-  // 🔍 parser robusto SINCA (valor + unidad + ICAP)
-  function parseValor(raw) {
+  // 🧼 limpieza fuerte de unidades SINCA
+  function cleanUnidad(u) {
+    if (!u) return "";
+
+    return u
+      .replace(/ICAP/gi, "")
+      .replace(/--:hrs/g, "")
+      .replace(/³/g, "")
+      .replace(/N\b/g, "")
+      .replace(/µg\/m³/g, "µg/m³")
+      .replace(/µg\/m/g, "µg/m³")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function parseValor(raw, fechaFallback) {
 
     if (!raw) return null;
 
     let text = decodeHtml(String(raw));
 
-    // limpiar ruido de tiempo
     text = text.replace(/--:hrs/g, "").trim();
 
-    // extraer número
     const match = text.match(/([\d.]+)/);
     if (!match) return null;
 
     const valor = Number(match[1]);
     if (isNaN(valor)) return null;
 
-    // detectar ICAP (NO eliminar, conservar como flag)
-    const icap = /ICAP/i.test(text);
-
-    // extraer unidad limpia
     let unidad = text
       .replace(match[0], "")
       .replace(/ICAP/gi, "")
-      .replace(/\s+/g, " ")
       .trim();
 
-    // normalización de símbolos raros SINCA
-    unidad = unidad
-      .replace(/µg⁄mN/g, "µg/m³")
-      .replace(/µg⁄m/g, "µg/m³")
-      .replace(/µg\/mN/g, "µg/m³");
+    unidad = cleanUnidad(unidad);
 
     return {
       valor,
       unidad,
-      icap
+      fecha: fechaFallback || ""
     };
   }
 
-  // 🎨 colores simples (puedes evolucionar a ICAP real después)
   function getColor(valor) {
-
     const v = Number(valor);
-
-    if (isNaN(v)) return "#999999";
+    if (isNaN(v)) return "#999";
     if (v <= 25) return "#00e400";
     if (v <= 50) return "#ffff00";
     if (v <= 100) return "#ff7e00";
@@ -69,7 +67,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // 📡 cargar datos
   function cargarDatos() {
 
     fetch("datos_sinca.json")
@@ -89,7 +86,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
-            const parsed = parseValor(r?.info?.rows?.length ? r.info.rows[r.info.rows.length - 1]?.c?.[3]?.v : null);
+            const rows = r?.info?.rows;
+
+            if (!Array.isArray(rows) || rows.length === 0) return;
+
+            // 🟢 tomar SOLO último row válido
+            const lastRow = rows[rows.length - 1];
+            const raw = lastRow?.c?.[3]?.v;
+
+            const parsed = parseValor(raw, r.datetime);
 
             if (!parsed) return;
 
@@ -108,14 +113,12 @@ document.addEventListener("DOMContentLoaded", function () {
               nombre: r.name || r.code || "contaminante",
               valor: parsed.valor,
               unidad: parsed.unidad,
-              icap: parsed.icap,
-              fecha: r.datetime || ""
+              fecha: parsed.fecha
             });
 
           });
         });
 
-        // 📍 markers
         Object.values(popupDict).forEach(estacion => {
 
           if (!estacion.analisis.length) return;
@@ -124,13 +127,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
           const popupHTML =
             `<b>${estacion.nombre}</b><hr>` +
-            estacion.analisis.map(a => {
-
-              const badge = a.icap ? " 🟡 ICAP" : "";
-
-              return `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}${badge}<br>
-                      <small>${a.fecha}</small>`;
-            }).join("<br>");
+            estacion.analisis.map(a =>
+              `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}<br>
+               <small>${a.fecha}</small>`
+            ).join("<br>");
 
           L.circleMarker([estacion.latitud, estacion.longitud], {
             radius: 7,
@@ -144,13 +144,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         });
 
-        console.log("✔ Mapa actualizado correctamente");
-
       })
       .catch(err => console.error("Error cargando datos:", err));
   }
 
-  // 🔄 init + refresh
   cargarDatos();
   setInterval(cargarDatos, 300000);
 
