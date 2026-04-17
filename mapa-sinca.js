@@ -9,37 +9,64 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🔍 extraer último valor válido
+  // 🧼 PARSER DE CONTAMINANTES (CLAVE NUEVA)
+  function parseContaminante(texto, fecha) {
+
+    if (!texto || typeof texto !== "string") return null;
+
+    // ejemplo:
+    // MP-2,5: 20 µg/m3 40 ICAP
+
+    const match = texto.match(
+      /(.+?):\s*([\d.,]+).*?(\d+)?\s*ICAP/i
+    );
+
+    if (!match) return null;
+
+    const nombre = match[1].trim();
+    const valor = Number(match[2].replace(",", "."));
+    const icap = match[3] ? Number(match[3]) : null;
+
+    if (isNaN(valor)) return null;
+
+    return {
+      nombre,
+      valor,
+      icap,
+      fecha
+    };
+  }
+
+  // 🔍 extraer fila cruda (AHORA MÁS FLEXIBLE)
   function extraerUltimoValor(infoRows) {
+
     if (!Array.isArray(infoRows)) return null;
 
     for (let i = infoRows.length - 1; i >= 0; i--) {
+
       const row = infoRows[i];
 
-      const valor = row?.c?.[3]?.v;
       const fecha = row?.c?.[0]?.v || "";
+      const texto = row?.c?.[3]?.v; // 👈 ahora es texto completo
 
-      if (
-        valor !== null &&
-        valor !== undefined &&
-        valor !== "" &&
-        valor !== "no disponible"
-      ) {
-        return { valor, fecha };
+      if (texto) {
+        return { texto, fecha };
       }
     }
+
     return null;
   }
 
-  // 🎨 color básico (opcional pero útil)
-  function getColor(valor) {
-    const v = Number(valor);
+  // 🎨 color por ICAP (MEJORA REAL)
+  function getColorICAP(icap) {
 
-    if (isNaN(v)) return "#999999";
-    if (v <= 25) return "#00e400";
-    if (v <= 50) return "#ffff00";
-    if (v <= 100) return "#ff7e00";
-    if (v <= 150) return "#ff0000";
+    if (icap === null || icap === undefined) return "#999999";
+
+    if (icap <= 25) return "#00e400";
+    if (icap <= 50) return "#ffff00";
+    if (icap <= 100) return "#ff7e00";
+    if (icap <= 150) return "#ff0000";
+
     return "#8f3f97";
   }
 
@@ -75,30 +102,41 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const infoRows = r?.info?.rows;
+
             const result = extraerUltimoValor(infoRows);
 
-            if (result) {
-              popupDict[key].analisis.push({
-                nombre: r.name || "sin nombre",
-                valor: result.valor,
-                fecha: result.fecha
-              });
-            }
+            if (!result) return;
+
+            // 🧠 PARSE REAL DEL TEXTO
+            const parsed = parseContaminante(result.texto, result.fecha);
+
+            if (!parsed) return;
+
+            popupDict[key].analisis.push(parsed);
           });
+
         });
 
-        // 📍 crear marcadores
+        // 📍 CREAR MARCADORES
         Object.values(popupDict).forEach(estacion => {
 
           if (!estacion.analisis.length) return;
 
-          const refValor = estacion.analisis[0].valor;
-          const color = getColor(refValor);
+          // 🔥 color basado en peor ICAP
+          const maxICAP = Math.max(
+            ...estacion.analisis
+              .map(a => a.icap)
+              .filter(v => v !== null)
+          );
+
+          const color = getColorICAP(maxICAP);
 
           const popupHTML =
             `<b>${estacion.nombre}</b><hr>` +
             estacion.analisis.map(a =>
-              `<b>${a.nombre}:</b> ${a.valor} <br><small>${a.fecha}</small>`
+              `<b>${a.nombre}:</b> ${a.valor} ` +
+              (a.icap !== null ? `(ICAP: ${a.icap})` : "") +
+              `<br><small>${a.fecha}</small>`
             ).join("<br>");
 
           L.circleMarker([estacion.latitud, estacion.longitud], {
