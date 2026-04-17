@@ -8,30 +8,42 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
+  // 🔧 NORMALIZADOR (HTML + acentos + minúsculas)
+  function normalize(text) {
+    if (!text) return "";
+
+    const t = document.createElement("textarea");
+    t.innerHTML = text;
+
+    return t.value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  // 🔢 extraer número
   function getNumber(v) {
     const m = String(v).match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
-  // 🔥 reconstrucción inteligente de unidad
+  // 🧪 unidad por contaminante (ROBUSTA)
   function getUnit(r) {
-  
-    const name = (r?.name || "").toLowerCase();
-  
-    // Material particulado
+
+    const name = normalize(r?.name);
+
     if (name.includes("mp-2,5") || name.includes("pm25")) return "µg/m³";
     if (name.includes("mp-10") || name.includes("pm10")) return "µg/m³";
-  
-    // Gases
-    if (name.includes("Monóxido de carbono") || name.includes("co")) return "ppmv";
-    if (name.includes("Ozono") || name.includes("o3")) return "ppbv";
-    if (name.includes("Dióxido de nitrógeno") || name.includes("no2")) return "ppbv";
-    if (name.includes("Dióxido de azufre") || name.includes("so2")) return "ppbv";
-  
-    // fallback
+
+    if (name.includes("monoxido de carbono") || name.includes("co")) return "ppmv";
+    if (name.includes("ozono") || name.includes("o3")) return "ppbv";
+    if (name.includes("dioxido de nitrogeno") || name.includes("no2")) return "ppbv";
+    if (name.includes("dioxido de azufre") || name.includes("so2")) return "ppbv";
+
     return "";
   }
 
+  // 🎨 colores básicos
   function getColor(v) {
     if (v === null || v === undefined) return "#999";
     if (v <= 25) return "#00e400";
@@ -41,6 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
+  // 📡 carga datos
   function cargarDatos() {
 
     fetch("datos_sinca.json")
@@ -62,11 +75,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
             let raw = "";
 
+            // 🔍 extracción flexible
             if (r?.tableRow?.value !== undefined) {
               raw = r.tableRow.value;
             } else if (r?.info?.rows?.length) {
               const last = r.info.rows[r.info.rows.length - 1];
               raw = last?.c?.[3]?.v;
+            } else if (typeof r?.value !== "undefined") {
+              raw = r.value;
             }
 
             const valor = getNumber(raw);
@@ -86,7 +102,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             estaciones[key].analisis.push({
-              nombre: r.name || r.code,
+              nombre: r.name || r.code || "contaminante",
               valor,
               unidad: unit,
               fecha: r.datetime || ""
@@ -95,6 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         });
 
+        // 📍 render markers
         Object.values(estaciones).forEach(est => {
 
           if (!est.analisis.length) return;
