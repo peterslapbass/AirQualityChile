@@ -9,30 +9,63 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🔍 extraer último valor válido
-  function extraerUltimoValor(infoRows) {
-    if (!Array.isArray(infoRows)) return null;
+  // 🧼 NORMALIZACIÓN TIPO PYTHON (PORTADA A JS)
+  function normalizarValor(valor) {
 
-    for (let i = infoRows.length - 1; i >= 0; i--) {
-      const row = infoRows[i];
+    if (valor === null || valor === undefined) return null;
 
-      const valor = row?.c?.[3]?.v;
-      const fecha = row?.c?.[0]?.v || "";
+    if (typeof valor === "string") {
+      valor = valor.trim().toLowerCase();
 
       if (
-        valor !== null &&
-        valor !== undefined &&
-        valor !== "" &&
-        valor !== "no disponible"
+        valor === "" ||
+        valor === "no disponible" ||
+        valor === "null" ||
+        valor === "nan"
       ) {
-        return { valor, fecha };
+        return null;
       }
+
+      const num = Number(valor);
+      if (isNaN(num)) return null;
+
+      return num;
     }
+
+    if (typeof valor === "number") {
+      if (isNaN(valor)) return null;
+      return valor;
+    }
+
     return null;
   }
 
-  // 🎨 color básico (opcional pero útil)
+  // 🔍 extraer último valor válido (con lógica limpia)
+  function extraerUltimoValor(infoRows) {
+
+    if (!Array.isArray(infoRows)) return null;
+
+    for (let i = infoRows.length - 1; i >= 0; i--) {
+
+      const row = infoRows[i];
+
+      const fecha = row?.c?.[0]?.v || "";
+      const valorRaw = row?.c?.[3]?.v;
+
+      const valor = normalizarValor(valorRaw);
+
+      // 🚀 equivalente a lógica Python: solo devolver valores válidos
+      if (valor !== null) {
+        return { valor, fecha };
+      }
+    }
+
+    return null;
+  }
+
+  // 🎨 color por valor
   function getColor(valor) {
+
     const v = Number(valor);
 
     if (isNaN(v)) return "#999999";
@@ -84,7 +117,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 fecha: result.fecha
               });
             }
+
           });
+
         });
 
         // 📍 crear marcadores
@@ -98,7 +133,7 @@ document.addEventListener("DOMContentLoaded", function () {
           const popupHTML =
             `<b>${estacion.nombre}</b><hr>` +
             estacion.analisis.map(a =>
-              `<b>${a.nombre}:</b> ${a.valor} <br><small>${a.fecha}</small>`
+              `<b>${a.nombre}:</b> ${a.valor}<br><small>${a.fecha}</small>`
             ).join("<br>");
 
           L.circleMarker([estacion.latitud, estacion.longitud], {
