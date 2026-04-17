@@ -8,26 +8,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  function clean(t) {
-    if (!t) return "";
-    return String(t)
-      .replace(/ICAP/gi, "")
-      .replace(/--\s*:?\s*hrs\.?/gi, "")
-      .trim();
-  }
-
-  function getNumber(t) {
-    const m = String(t).match(/(\d+(\.\d+)?)/);
+  function getNumber(v) {
+    const m = String(v).match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
-  }
-
-  function getUnit(t) {
-    return String(t)
-      .replace(/ICAP/gi, "")
-      .replace(/--\s*:?\s*hrs\.?/gi, "")
-      .replace(/\d+(\.\d+)?/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
   }
 
   function getColor(v) {
@@ -37,15 +20,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (v <= 100) return "#ff7e00";
     if (v <= 150) return "#ff0000";
     return "#8f3f97";
-  }
-
-  function extractRows(r) {
-    return (
-      r?.info?.rows ||
-      r?.tableRow ||
-      r?.info?.tableRow ||
-      []
-    );
   }
 
   function cargarDatos() {
@@ -67,37 +41,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
           realtime.forEach(r => {
 
-            const rows = extractRows(r);
-            if (!Array.isArray(rows) || rows.length === 0) return;
+            // 🔥 AQUÍ está la clave: ya viene el valor en texto o tableRow
+            let raw = "";
 
-            let valor = null;
-            let unidad = "";
-
-            // 🔥 buscar desde el final
-            for (let i = rows.length - 1; i >= 0; i--) {
-
-              const row = rows[i];
-
-              const raw =
-                row?.c?.[3]?.v ??
-                row?.c?.[2]?.v ??
-                row?.c?.[1]?.v;
-
-              const text = clean(raw);
-
-              if (!text) continue;
-              if (text.includes("hrs")) continue;
-              if (text.includes("--")) continue;
-
-              const num = getNumber(text);
-
-              if (num !== null) {
-                valor = num;
-                unidad = getUnit(text);
-                break;
-              }
+            if (r?.tableRow?.value !== undefined) {
+              raw = r.tableRow.value;
+            } else if (r?.info?.rows?.length) {
+              // fallback viejo
+              const last = r.info.rows[r.info.rows.length - 1];
+              raw = last?.c?.[3]?.v;
+            } else {
+              // último fallback: intentar name/code (no ideal pero evita vacío)
+              raw = r.name;
             }
 
+            const valor = getNumber(raw);
             if (valor === null) return;
 
             const key = `${nombre}|${latitud}|${longitud}`;
@@ -112,9 +70,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             estaciones[key].analisis.push({
-              nombre: r.name || r.code || "contaminante",
+              nombre: r.name || r.code,
               valor,
-              unidad,
               fecha: r.datetime || ""
             });
 
@@ -130,7 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
           const popup =
             `<b>${est.nombre}</b><hr>` +
             est.analisis.map(a =>
-              `<b>${a.nombre}:</b> ${a.valor} ${a.unidad}<br>
+              `<b>${a.nombre}:</b> ${a.valor}<br>
                <small>${a.fecha}</small>`
             ).join("<br>");
 
