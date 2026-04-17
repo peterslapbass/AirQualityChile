@@ -18,36 +18,29 @@ document.addEventListener("DOMContentLoaded", function () {
   
       let valor = row.c[3]?.v;
   
-      // 🔥 limpiar valor
       if (valor === null || valor === undefined) continue;
   
-      if (typeof valor === "string") {
-        valor = valor.trim().toLowerCase();
+      // 🔹 si es número válido
+      if (typeof valor === "number") {
+        if (!isNaN(valor)) return valor;
+      }
   
-        // ❌ descartar valores inválidos comunes
+      // 🔹 si es string
+      if (typeof valor === "string") {
+        const limpio = valor.trim().toLowerCase();
+  
+        // solo descartar casos claros
         if (
-          valor === "" ||
-          valor === "0" ||
-          valor === "no disponible" ||
-          valor === "nd" ||
-          valor === "s/i" ||
-          valor === "-"
+          limpio === "" ||
+          limpio === "no disponible" ||
+          limpio === "nd"
         ) {
           continue;
         }
   
-        // intentar convertir a número
-        const num = Number(valor.replace(",", "."));
-        if (!isNaN(num) && num !== 0) {
-          return num;
-        }
-  
-        continue;
-      }
-  
-      // ✔️ si es número válido
-      if (typeof valor === "number" && valor !== 0) {
-        return valor;
+        // intentar convertir
+        const num = Number(limpio.replace(",", "."));
+        if (!isNaN(num)) return num;
       }
     }
   
