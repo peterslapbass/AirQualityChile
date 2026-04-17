@@ -1,182 +1,190 @@
-alert("MAPA-SINCA ACTIVO");
-
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("✅ SCRIPT CARGADO - DOM READY");
+
+  console.log("🔥 MAPA SINCA ACTIVO");
 
   const map = L.map('map').setView([-33.45, -70.66], 5);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap & CartoDB'
+    attribution: '&copy; OpenStreetMap'
   }).addTo(map);
 
-  let markersLayer = L.layerGroup().addTo(map);
+  let layer = L.layerGroup().addTo(map);
 
-  // ---------------- NORMALIZAR ----------------
-  function normalize(text) {
-    if (!text) return "";
+  let DATA = {};
+  let CURRENT_FILTER = "ALL";
 
-    const t = document.createElement("textarea");
-    t.innerHTML = text;
+  /* ---------------- NORMALIZAR ---------------- */
 
-    return t.value
-      .toLowerCase()
+  function normalize(t){
+    if(!t) return "";
+    const x = document.createElement("textarea");
+    x.innerHTML = t;
+    return x.value.toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+      .replace(/[\u0300-\u036f]/g,"");
   }
 
-  // ---------------- NÚMERO ----------------
-  function getNumber(v) {
-    const m = String(v).match(/(\d+(\.\d+)?)/);
+  /* ---------------- EXTRAER VALOR ---------------- */
+
+  function getValue(r){
+    const m = String(r?.tableRow?.value || "").match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
-  // ---------------- UNIDADES ----------------
-  function getUnit(nameRaw) {
+  /* ---------------- CLASIFICAR CONTAMINANTE ---------------- */
 
-    const name = normalize(nameRaw);
+  function getPollutant(name){
 
-    console.log("🔎 UNIT INPUT:", nameRaw, "→", name);
+    const n = normalize(name);
 
-    if (name.includes("mp-2,5") || name.includes("pm25")) return "µg/m³";
-    if (name.includes("mp-10") || name.includes("pm10")) return "µg/m³";
+    if(n.includes("mp-2,5") || n.includes("pm25")) return "MP-2,5";
+    if(n.includes("mp-10") || n.includes("pm10")) return "MP-10";
+    if(n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
+    if(n.includes("monoxido de carbono") || n.includes("co")) return "CO";
+    if(n.includes("ozono") || n.includes("o3")) return "O3";
 
-    if (name.includes("monoxido de carbono") || name.includes("co")) return "ppmv";
-    if (name.includes("ozono") || name.includes("o3")) return "ppbv";
-    if (name.includes("dioxido de nitrogeno") || name.includes("no2")) return "ppbv";
-    if (name.includes("dioxido de azufre") || name.includes("so2")) return "ppbv";
-
-    return "";
+    return null;
   }
 
-  // ---------------- COLOR ----------------
-  function getColor(v) {
-    if (v === null || v === undefined) return "#999";
-    if (v <= 25) return "#00e400";
-    if (v <= 50) return "#ffff00";
-    if (v <= 100) return "#ff7e00";
-    if (v <= 150) return "#ff0000";
-    return "#8f3f97";
+  /* ---------------- COLOR ---------------- */
+
+  function color(v){
+    if(v <= 25) return "green";
+    if(v <= 50) return "yellow";
+    if(v <= 100) return "orange";
+    if(v <= 150) return "red";
+    return "purple";
   }
 
-  // ---------------- LOAD ----------------
-  function cargarDatos() {
+  /* ---------------- LOAD DATA ---------------- */
 
-    console.log("📡 FETCH INICIADO");
+  async function load(){
 
-    fetch("datos_sinca.json")
-      .then(res => {
-        console.log("📦 RESPONSE RECIBIDA", res.status);
-        return res.json();
-      })
-      .then(data => {
+    console.log("📡 CARGANDO DATOS");
 
-        console.log("📊 DATA CARGADA:", data);
+    const res = await fetch("datos_sinca.json");
+    const data = await res.json();
 
-        markersLayer.clearLayers();
+    layer.clearLayers();
 
-        let totalEstaciones = 0;
-        let totalRealtime = 0;
+    DATA = {
+      "MP-2,5": [],
+      "MP-10": [],
+      "NO2": [],
+      "CO": [],
+      "O3": []
+    };
 
-        const estaciones = {};
+    data.forEach(station => {
 
-        data.forEach(estacion => {
+      const { nombre, latitud, longitud, realtime } = station;
 
-          totalEstaciones++;
+      realtime?.forEach(r => {
 
-          console.log("🏭 ESTACIÓN:", estacion.nombre);
+        const value = getValue(r);
+        if(value === null) return;
 
-          const { nombre, latitud, longitud, realtime } = estacion;
+        const pollutant = getPollutant(r.name);
+        if(!pollutant) return;
 
-          if (!latitud || !longitud) {
-            console.log("❌ SIN COORDS:", nombre);
-            return;
-          }
-
-          if (!Array.isArray(realtime)) {
-            console.log("❌ NO REALTIME ARRAY:", nombre, realtime);
-            return;
-          }
-
-          realtime.forEach(r => {
-
-            totalRealtime++;
-
-            console.log("⚡ REALTIME ITEM:", r);
-
-            let raw = "";
-
-            if (r?.tableRow?.value !== undefined) {
-              raw = r.tableRow.value;
-            } else if (r?.info?.rows?.length) {
-              const last = r.info.rows[r.info.rows.length - 1];
-              raw = last?.c?.[3]?.v;
-            } else if (typeof r?.value !== "undefined") {
-              raw = r.value;
-            }
-
-            const valor = getNumber(raw);
-
-            if (valor === null) {
-              console.log("⚠️ SIN VALOR:", r.name, raw);
-              return;
-            }
-
-            const unidad = getUnit(r.name || r.code);
-
-            const key = `${nombre}|${latitud}|${longitud}`;
-
-            if (!estaciones[key]) {
-              estaciones[key] = {
-                nombre,
-                latitud,
-                longitud,
-                analisis: []
-              };
-            }
-
-            estaciones[key].analisis.push({
-              nombre: r.name || r.code,
-              valor,
-              unidad,
-              fecha: r.datetime || ""
-            });
-
-          });
+        DATA[pollutant].push({
+          station: nombre,
+          lat: latitud,
+          lon: longitud,
+          value,
+          time: r.datetime || ""
         });
 
-        console.log("📌 RESUMEN:");
-        console.log("Estaciones:", totalEstaciones);
-        console.log("Realtime items:", totalRealtime);
-
-        Object.values(estaciones).forEach(est => {
-
-          if (!est.analisis.length) return;
-
-          const color = getColor(est.analisis[0].valor);
-
-          L.circleMarker([est.latitud, est.longitud], {
-            radius: 7,
-            color: "#000",
-            fillColor: color,
-            fillOpacity: 0.85
-          })
-          .addTo(markersLayer)
-          .bindPopup(
-            `<b>${est.nombre}</b><hr>` +
-            est.analisis.map(a =>
-              `${a.nombre}: ${a.valor} ${a.unidad}<br><small>${a.fecha}</small>`
-            ).join("<br>")
-          );
-
-        });
-
-      })
-      .catch(err => {
-        console.error("❌ ERROR FETCH:", err);
       });
+
+    });
+
+    render();
   }
 
-  cargarDatos();
-  setInterval(cargarDatos, 300000);
+  /* ---------------- RENDER ---------------- */
+
+  function render(){
+
+    layer.clearLayers();
+
+    let pollutants = Object.keys(DATA);
+
+    if(CURRENT_FILTER !== "ALL"){
+      pollutants = [CURRENT_FILTER];
+    }
+
+    let rankingHTML = "";
+
+    pollutants.forEach(p => {
+
+      const list = DATA[p];
+
+      if(!list.length) return;
+
+      // MAPA
+      list.forEach(item => {
+
+        L.circleMarker([item.lat, item.lon], {
+          radius: 7,
+          color: "#000",
+          fillColor: color(item.value),
+          fillOpacity: 0.85
+        }).addTo(layer)
+        .bindPopup(
+          `<b>${item.station}</b><br>
+           ${p}: ${item.value}<br>
+           <small>${item.time}</small>`
+        );
+
+      });
+
+      // RANKING
+      const sorted = [...list].sort((a,b)=>b.value-a.value);
+
+      rankingHTML += `
+        <h4>${p}</h4>
+        ${sorted.slice(0,5).map(i=>`
+          <div class="card">
+            <b>${i.station}</b><br>
+            ${i.value}
+          </div>
+        `).join("")}
+      `;
+    });
+
+    document.getElementById("ranking").innerHTML = rankingHTML;
+
+    // ALERTAS
+    let alerts = [];
+
+    Object.keys(DATA).forEach(p => {
+      DATA[p].forEach(i => {
+        if(i.value > 100){
+          alerts.push({...i, pollutant:p});
+        }
+      });
+    });
+
+    document.getElementById("alerts").innerHTML =
+      alerts.map(a => `
+        <div class="alert">
+          ⚠️ ${a.station} - ${a.pollutant}: ${a.value}
+        </div>
+      `).join("");
+  }
+
+  /* ---------------- FILTER ---------------- */
+
+  document.getElementById("filter")
+    .addEventListener("change", (e)=>{
+      CURRENT_FILTER = e.target.value;
+      render();
+    });
+
+  /* ---------------- INIT ---------------- */
+
+  load();
+  setInterval(load, 300000);
 
 });
