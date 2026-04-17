@@ -8,27 +8,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-    function extraerUltimoValor(infoRows) {
+  // 🎨 COLOR SEGÚN VALOR (PM2.5 estilo simplificado)
+  function getColor(valor) {
+    if (valor === null || valor === undefined) return "#999999";
+    if (valor <= 25) return "#00e400";
+    if (valor <= 50) return "#ffff00";
+    if (valor <= 100) return "#ff7e00";
+    if (valor <= 150) return "#ff0000";
+    return "#8f3f97";
+  }
+
+  // 🔍 extracción robusta
+  function extraerUltimoValor(infoRows) {
     if (!Array.isArray(infoRows)) return null;
-  
+
     for (let i = infoRows.length - 1; i >= 0; i--) {
       const row = infoRows[i];
-  
+
       if (row?.c && row.c.length > 3) {
         const valor = row.c[3]?.v;
-  
+        const fecha = row.c[0]?.v || "";
+
         if (
           valor !== null &&
           valor !== undefined &&
           valor !== "" &&
           valor !== "no disponible"
         ) {
-          return valor;
+          return { valor, fecha };
         }
       }
     }
     return null;
   }
+
   function cargarDatos() {
     fetch("datos_sinca.json")
       .then(res => res.json())
@@ -45,6 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
           if (!Array.isArray(realtime)) return;
 
           realtime.forEach(r => {
+
             const key = `${nombre}|${latitud}|${longitud}`;
 
             if (!popupDict[key]) {
@@ -56,32 +70,46 @@ document.addEventListener("DOMContentLoaded", function () {
               };
             }
 
-            console.log("estructura:", r);
-            
-            // 🔥 acceso correcto
             const infoRows = r.info?.rows;
+            const result = extraerUltimoValor(infoRows);
 
-            const valor = extraerUltimoValor(infoRows);
             const nombreAnalisis = r.name || "";
 
-            if (valor !== null) {
-              popupDict[key].analisis.push(
-                `<b>${nombreAnalisis}:</b> ${valor}`
-              );
+            if (result && result.valor !== null) {
+
+              popupDict[key].analisis.push({
+                nombre: nombreAnalisis,
+                valor: result.valor,
+                fecha: result.fecha
+              });
             }
           });
         });
 
         Object.values(popupDict).forEach(estacion => {
+
           if (!estacion.analisis.length) return;
 
-          const popupHTML =
-            `<b>${estacion.nombre}</b><br>` +
-            estacion.analisis.join("<br>");
+          // 🔥 usa primer valor como referencia de color
+          const refValor = estacion.analisis[0].valor;
+          const color = getColor(refValor);
 
-          L.marker([estacion.latitud, estacion.longitud])
-            .addTo(markersLayer)
-            .bindPopup(popupHTML);
+          const popupHTML =
+            `<b>${estacion.nombre}</b><br><hr>` +
+            estacion.analisis.map(a =>
+              `<b>${a.nombre}:</b> ${a.valor} <br><small>${a.fecha}</small>`
+            ).join("<br>");
+
+          L.circleMarker([estacion.latitud, estacion.longitud], {
+            radius: 7,
+            color: "#000",
+            weight: 1,
+            fillColor: color,
+            fillOpacity: 0.85
+          })
+          .addTo(markersLayer)
+          .bindPopup(popupHTML);
+
         });
 
       })
@@ -91,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // carga inicial
   cargarDatos();
 
-  // 🔄 actualiza cada 5 minutos
+  // 🔄 actualización automática
   setInterval(cargarDatos, 300000);
 
 });
