@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     attribution: '&copy; OpenStreetMap & CartoDB'
   }).addTo(map);
 
-  fetch("https://api.allorigins.win/raw?url=https://sinca.mma.gob.cl/index.php/json/listadomapa2k19")
+  fetch("datos_sinca.json")
     .then(res => res.json())
     .then(data => {
 
