@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let markersLayer = L.layerGroup().addTo(map);
 
-  // 🔧 NORMALIZADOR (HTML + acentos + minúsculas)
+  // ---------------- NORMALIZAR ----------------
   function normalize(text) {
     if (!text) return "";
 
@@ -21,29 +21,31 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/[\u0300-\u036f]/g, "");
   }
 
-  // 🔢 extraer número
+  // ---------------- EXTRAER NÚMERO ----------------
   function getNumber(v) {
+    if (v === null || v === undefined) return null;
+
     const m = String(v).match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
-  // 🧪 unidad por contaminante (ROBUSTA)
-  function getUnit(r) {
+  // ---------------- UNIDADES ROBUSTAS ----------------
+  function getUnit(nameRaw) {
 
-    const name = normalize(r?.name);
+    const name = normalize(nameRaw);
 
     if (name.includes("mp-2,5") || name.includes("pm25")) return "µg/m³";
     if (name.includes("mp-10") || name.includes("pm10")) return "µg/m³";
 
+    if (name.includes("dioxido de nitrogeno") || name.includes("no2")) return "ppbv";
     if (name.includes("monoxido de carbono") || name.includes("co")) return "ppmv";
     if (name.includes("ozono") || name.includes("o3")) return "ppbv";
-    if (name.includes("dioxido de nitrogeno") || name.includes("no2")) return "ppbv";
     if (name.includes("dioxido de azufre") || name.includes("so2")) return "ppbv";
 
     return "";
   }
 
-  // 🎨 colores básicos
+  // ---------------- COLOR ----------------
   function getColor(v) {
     if (v === null || v === undefined) return "#999";
     if (v <= 25) return "#00e400";
@@ -53,11 +55,11 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#8f3f97";
   }
 
-  // 📡 carga datos
+  // ---------------- LOAD ----------------
   function cargarDatos() {
 
     fetch("datos_sinca.json")
-      .then(r => r.json())
+      .then(res => res.json())
       .then(data => {
 
         markersLayer.clearLayers();
@@ -75,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             let raw = "";
 
-            // 🔍 extracción flexible
+            // extracción flexible
             if (r?.tableRow?.value !== undefined) {
               raw = r.tableRow.value;
             } else if (r?.info?.rows?.length) {
@@ -88,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const valor = getNumber(raw);
             if (valor === null) return;
 
-            const unit = getUnit(r);
+            const unidad = getUnit(r.name || r.code);
 
             const key = `${nombre}|${latitud}|${longitud}`;
 
@@ -104,19 +106,20 @@ document.addEventListener("DOMContentLoaded", function () {
             estaciones[key].analisis.push({
               nombre: r.name || r.code || "contaminante",
               valor,
-              unidad: unit,
+              unidad,
               fecha: r.datetime || ""
             });
 
           });
         });
 
-        // 📍 render markers
+        // ---------------- RENDER ----------------
         Object.values(estaciones).forEach(est => {
 
           if (!est.analisis.length) return;
 
-          const color = getColor(est.analisis[0].valor);
+          const peor = Math.max(...est.analisis.map(a => a.valor));
+          const color = getColor(peor);
 
           const popup =
             `<b>${est.nombre}</b><hr>` +
