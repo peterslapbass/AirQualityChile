@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 <title>🌫️ Aire Chile — SINCA</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -13,15 +14,15 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #0e0e0e;
-  --surface:   #161616;
-  --surface2:  #1c1c1c;
-  --border:    #252525;
-  --text:      #e8e8e8;
-  --muted:     #666;
-  --faint:     #333;
-  --accent:    #185FA5;
-  --font:      'Inter', system-ui, sans-serif;
+  --bg:      #0e0e0e;
+  --surface: #161616;
+  --surface2:#1c1c1c;
+  --border:  #252525;
+  --text:    #e8e8e8;
+  --muted:   #666;
+  --faint:   #333;
+  --accent:  #185FA5;
+  --font:    'Inter', system-ui, sans-serif;
 }
 
 body {
@@ -35,7 +36,9 @@ body {
   position: relative;
 }
 
-/* ── Sidebar izquierdo ── */
+/* ══════════════════════════════
+   SIDEBAR IZQUIERDO — desktop
+══════════════════════════════ */
 #sidebar {
   width: 280px;
   background: var(--bg);
@@ -43,6 +46,7 @@ body {
   flex-direction: column;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
+  z-index: 400;
 }
 
 #sidebar-header {
@@ -56,13 +60,6 @@ body {
   letter-spacing: -0.01em;
   color: var(--text);
   margin-bottom: 10px;
-}
-
-#sidebar-subtitle {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-  font-weight: 400;
 }
 
 #filter {
@@ -101,7 +98,6 @@ body {
 }
 .section-label:first-child { margin-top: 0; }
 
-/* Alertas */
 .alert-item {
   display: flex;
   align-items: center;
@@ -116,7 +112,6 @@ body {
 .alert-name { flex: 1; font-size: 12px; color: #e8e8e8; }
 .alert-val  { font-size: 12px; font-weight: 500; color: #e05050; }
 
-/* Ranking */
 .rank-item {
   display: flex;
   align-items: center;
@@ -130,34 +125,17 @@ body {
   transition: border-color 0.15s, background 0.15s;
 }
 .rank-item:hover { background: var(--surface2); border-color: var(--faint); }
+.rank-num  { font-size: 10px; color: var(--muted); min-width: 14px; text-align: right; }
+.rank-name { flex: 1; font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rank-val  { font-size: 12px; font-weight: 500; color: var(--text); }
 
-.rank-num {
-  font-size: 10px;
-  color: var(--muted);
-  min-width: 14px;
-  text-align: right;
-}
-.rank-name {
-  flex: 1;
-  font-size: 12px;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.rank-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.rank-val { font-size: 12px; font-weight: 500; color: var(--text); }
-
-/* ── Mapa ── */
+/* ══════════════════════════════
+   MAPA
+══════════════════════════════ */
 #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 #map  { flex: 1; }
 
-/* Leaflet overrides */
 .leaflet-popup-content-wrapper {
   background: var(--surface2);
   color: var(--text);
@@ -171,7 +149,9 @@ body {
 .leaflet-popup-content b { font-weight: 500; font-size: 13px; }
 .leaflet-popup-content hr { border-color: var(--border); margin: 6px 0; }
 
-/* ── Panel derecho (series) ── */
+/* ══════════════════════════════
+   PANEL DE SERIES — desktop: slide desde derecha
+══════════════════════════════ */
 #chart-panel {
   position: absolute;
   top: 0;
@@ -188,6 +168,9 @@ body {
 }
 #chart-panel.open { transform: translateX(0); }
 
+/* Handle de arrastre — solo móvil */
+#sheet-handle { display: none; }
+
 #chart-panel-header {
   display: flex;
   justify-content: space-between;
@@ -203,11 +186,8 @@ body {
   letter-spacing: -0.01em;
   flex: 1;
 }
-#chart-region {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 3px;
-}
+#chart-region { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
 #chart-close {
   background: none;
   border: 1px solid var(--border);
@@ -240,7 +220,7 @@ body {
   color: var(--muted);
   transition: all 0.15s;
 }
-.cpill:hover { border-color: var(--faint); color: var(--text); }
+.cpill:hover  { border-color: var(--faint); color: var(--text); }
 .cpill.active { background: var(--accent); color: white; border-color: var(--accent); }
 
 #chart-stats {
@@ -250,23 +230,17 @@ body {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
 }
-.cstat { background: var(--surface); border-radius: 5px; padding: 8px 9px; }
+.cstat     { background: var(--surface); border-radius: 5px; padding: 8px 9px; }
 .cstat-lbl { font-size: 10px; color: var(--muted); margin-bottom: 3px; letter-spacing: 0.03em; }
 .cstat-val { font-size: 17px; font-weight: 500; color: var(--text); }
-.cstat-unit { font-size: 9px; color: var(--muted); margin-left: 2px; }
+.cstat-unit{ font-size: 9px; color: var(--muted); margin-left: 2px; }
 
-.status-badge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-.status-bueno    { background: #0e2a0e; color: #5dc45d; border: 1px solid #1a4a1a; }
-.status-regular  { background: #2a200a; color: #f0a830; border: 1px solid #4a380a; }
-.status-malo     { background: #2a0e0e; color: #e05050; border: 1px solid #4a1a1a; }
-.status-critico  { background: #1e0e30; color: #a070f0; border: 1px solid #3a1a50; }
-.status-nd       { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.status-badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; }
+.status-bueno   { background: #0e2a0e; color: #5dc45d; border: 1px solid #1a4a1a; }
+.status-regular { background: #2a200a; color: #f0a830; border: 1px solid #4a380a; }
+.status-malo    { background: #2a0e0e; color: #e05050; border: 1px solid #4a1a1a; }
+.status-critico { background: #1e0e30; color: #a070f0; border: 1px solid #3a1a50; }
+.status-nd      { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
 
 #chart-wrap {
   flex: 1;
@@ -274,20 +248,123 @@ body {
   position: relative;
   min-height: 180px;
 }
-#chart-empty {
-  color: var(--muted);
+#chart-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 40px 20px; }
+
+/* ══════════════════════════════
+   BOTÓN FLOTANTE — solo móvil
+══════════════════════════════ */
+#fab {
+  display: none;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font);
   font-size: 12px;
-  text-align: center;
-  padding: 40px 20px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 24px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+}
+
+/* ══════════════════════════════
+   SHEET OVERLAY — solo móvil
+══════════════════════════════ */
+#sheet-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 599;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+#sheet-overlay.visible { opacity: 1; }
+
+/* ══════════════════════════════
+   RESPONSIVE — móvil (≤ 680px)
+══════════════════════════════ */
+@media (max-width: 680px) {
+
+  /* Sidebar se convierte en bottom sheet */
+  #sidebar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 70vh;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    border-radius: 14px 14px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 600;
+  }
+  #sidebar.sheet-open { transform: translateY(0); }
+
+  /* Panel de series también como bottom sheet */
+  #chart-panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 75vh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: 14px 14px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 600;
+  }
+  #chart-panel.open { transform: translateY(0); }
+
+  /* Handle visual encima de ambos sheets */
+  #sheet-handle {
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--faint);
+    border-radius: 2px;
+    margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+
+  /* FAB visible */
+  #fab { display: block; }
+
+  /* Overlay visible */
+  #sheet-overlay { display: block; }
+
+  /* Mapa ocupa todo */
+  #main { position: absolute; inset: 0; }
+
+  /* Chart más compacto en móvil */
+  #chart-stats { grid-template-columns: repeat(3, 1fr); }
+  .cstat-val   { font-size: 15px; }
+
+  /* Popup de Leaflet más pequeño en móvil */
+  .leaflet-popup-content-wrapper { font-size: 11px; }
 }
 </style>
-
 </head>
 <body>
 
+<!-- Overlay para cerrar sheets -->
+<div id="sheet-overlay"></div>
+
+<!-- Sidebar (desktop: fijo izquierda / móvil: bottom sheet) -->
 <div id="sidebar">
+  <div id="sheet-handle"></div>
   <div id="sidebar-header">
-    <div id="sidebar-title">Aire Chile <span id="sidebar-subtitle" style="font-size:11px;color:var(--muted);font-weight:400">· SINCA</span></div>
+    <div id="sidebar-title">Aire Chile <span style="font-size:11px;color:var(--muted);font-weight:400">· SINCA</span></div>
     <select id="filter" style="margin-top:10px">
       <option value="ALL">Todos los contaminantes</option>
       <option value="MP-2,5">MP 2.5</option>
@@ -297,21 +374,25 @@ body {
       <option value="O3">O₃ Ozono</option>
     </select>
   </div>
-
   <div id="sidebar-body">
     <div class="section-label">Alertas</div>
     <div id="alerts"></div>
-
     <div class="section-label">Ranking</div>
     <div id="ranking"></div>
   </div>
 </div>
 
+<!-- Mapa -->
 <div id="main">
   <div id="map"></div>
 </div>
 
+<!-- Botón flotante — solo móvil -->
+<button id="fab">Ranking · Alertas</button>
+
+<!-- Panel de series (desktop: slide derecha / móvil: bottom sheet) -->
 <div id="chart-panel">
+  <div id="sheet-handle"></div>
   <div id="chart-panel-header">
     <div>
       <div id="chart-station-name">—</div>
@@ -330,6 +411,51 @@ body {
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="mapa-sinca.js" defer></script>
+
+<script>
+// Lógica de sheets — independiente de mapa-sinca.js
+(function() {
+  const overlay  = document.getElementById('sheet-overlay');
+  const sidebar  = document.getElementById('sidebar');
+  const fab      = document.getElementById('fab');
+  const panel    = document.getElementById('chart-panel');
+
+  function isMobile() { return window.innerWidth <= 680; }
+
+  function openSidebar() {
+    sidebar.classList.add('sheet-open');
+    overlay.classList.add('visible');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('sheet-open');
+    if (!panel.classList.contains('open')) overlay.classList.remove('visible');
+  }
+
+  function closePanel() {
+    panel.classList.remove('open');
+    if (!sidebar.classList.contains('sheet-open')) overlay.classList.remove('visible');
+  }
+
+  // FAB abre el sidebar en móvil
+  fab.addEventListener('click', openSidebar);
+
+  // Overlay cierra todo
+  overlay.addEventListener('click', () => {
+    closeSidebar();
+    closePanel();
+  });
+
+  // Reasignar el botón cerrar del panel para también limpiar overlay
+  document.getElementById('chart-close').addEventListener('click', closePanel);
+
+  // Exponer closePanel globalmente para que mapa-sinca.js lo use
+  window.closeChartPanel = closePanel;
+  window.openChartSheetOverlay = function() {
+    if (isMobile()) overlay.classList.add('visible');
+  };
+})();
+</script>
 
 </body>
 </html>
