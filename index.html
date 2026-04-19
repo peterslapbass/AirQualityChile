@@ -284,8 +284,9 @@ body {
   z-index: 599;
   opacity: 0;
   transition: opacity 0.25s ease;
+  pointer-events: none;
 }
-#sheet-overlay.visible { opacity: 1; }
+#sheet-overlay.visible { opacity: 1; pointer-events: auto; }
 
 /* ══════════════════════════════
    RESPONSIVE — móvil (≤ 680px)
