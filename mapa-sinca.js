@@ -260,9 +260,10 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       drawSeries(station, pollutants[0]);
     }
-    
+
     document.getElementById("chart-panel").classList.add("open");
     if (window.openChartSheetOverlay) window.openChartSheetOverlay();
+  }
 
   function drawSeries(station, pollutant) {
     const serie   = station.series[pollutant] || [];
