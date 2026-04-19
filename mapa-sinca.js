@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let STATIONS = {};
   let CURRENT_FILTER = "ALL";
 
-  /* ───────────────────────────────────────── 
+  /* ─────────────────────────────────────────
      NORMALIZAR
   ───────────────────────────────────────── */
 
@@ -262,6 +262,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.getElementById("chart-panel").classList.add("open");
+    if (window.openChartSheetOverlay) window.openChartSheetOverlay();
   }
 
   function drawSeries(station, pollutant) {
@@ -383,8 +384,10 @@ document.addEventListener("DOMContentLoaded", function () {
      CERRAR PANEL
   ───────────────────────────────────────── */
 
+  // El cierre del panel lo coordina el script de sheets en index.html
+  // para manejar el overlay correctamente en móvil.
+  // Aquí solo destruimos el chart al cerrar.
   document.getElementById("chart-close").addEventListener("click", () => {
-    document.getElementById("chart-panel").classList.remove("open");
     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
   });
 
