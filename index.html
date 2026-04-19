@@ -2,158 +2,276 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
-<title>Dashboard Calidad del Aire Chile</title>
+<title>🌫️ Aire Chile — SINCA</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet"/>
 
 <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0e0e0e;
+  --surface:   #161616;
+  --surface2:  #1c1c1c;
+  --border:    #252525;
+  --text:      #e8e8e8;
+  --muted:     #666;
+  --faint:     #333;
+  --accent:    #185FA5;
+  --font:      'Inter', system-ui, sans-serif;
+}
+
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: var(--font);
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
   display: flex;
   height: 100vh;
   overflow: hidden;
 }
 
-#sidebar {e
-  width: 300px;
-  background: #111;
-  color: white;
-  padding: 15px;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-
-h2 { margin-top: 0; }
-
-#main {
-  flex: 1;
+/* ── Sidebar izquierdo ── */
+#sidebar {
+  width: 280px;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
 }
 
-#map { flex: 1; }
+#sidebar-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
 
-.card {
-  background: #1e1e1e;
-  margin: 6px 0;
-  padding: 8px;
+#sidebar-title {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+#sidebar-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-weight: 400;
+}
+
+#filter {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
   border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+#filter:focus { outline: none; border-color: var(--accent); }
+
+#sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--faint) transparent;
 }
 
-.alert {
-  background: #330000;
-  padding: 8px;
-  margin: 5px 0;
-  border-left: 4px solid red;
+.section-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 14px 0 6px;
 }
+.section-label:first-child { margin-top: 0; }
 
-/* ── Panel series temporales ── */
+/* Alertas */
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  background: #1c0e0e;
+  border: 1px solid #3a1515;
+  border-left: 3px solid #c03030;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+.alert-name { flex: 1; font-size: 12px; color: #e8e8e8; }
+.alert-val  { font-size: 12px; font-weight: 500; color: #e05050; }
+
+/* Ranking */
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.rank-item:hover { background: var(--surface2); border-color: var(--faint); }
+
+.rank-num {
+  font-size: 10px;
+  color: var(--muted);
+  min-width: 14px;
+  text-align: right;
+}
+.rank-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rank-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rank-val { font-size: 12px; font-weight: 500; color: var(--text); }
+
+/* ── Mapa ── */
+#main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#map  { flex: 1; }
+
+/* Leaflet overrides */
+.leaflet-popup-content-wrapper {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  font-family: var(--font);
+  font-size: 12px;
+}
+.leaflet-popup-tip { background: var(--surface2); }
+.leaflet-popup-content b { font-weight: 500; font-size: 13px; }
+.leaflet-popup-content hr { border-color: var(--border); margin: 6px 0; }
+
+/* ── Panel derecho (series) ── */
 #chart-panel {
   width: 360px;
-  background: #111;
-  color: white;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  border-left: 1px solid #2a2a2a;
+  border-left: 1px solid var(--border);
   transform: translateX(100%);
   transition: transform 0.25s ease;
 }
-
 #chart-panel.open { transform: translateX(0); }
 
 #chart-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 14px 14px 10px;
-  border-bottom: 1px solid #2a2a2a;
+  padding: 16px 14px 12px;
+  border-bottom: 1px solid var(--border);
   gap: 8px;
 }
-
 #chart-station-name {
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 500;
   line-height: 1.3;
+  letter-spacing: -0.01em;
   flex: 1;
 }
-
 #chart-region {
   font-size: 11px;
-  color: #666;
-  font-weight: normal;
-  margin-top: 2px;
+  color: var(--muted);
+  margin-top: 3px;
 }
-
 #chart-close {
   background: none;
-  border: 1px solid #333;
-  color: #aaa;
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 5px;
   cursor: pointer;
-  padding: 2px 8px;
-  font-size: 13px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-family: var(--font);
   flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
 }
-#chart-close:hover { background: #222; color: white; }
+#chart-close:hover { border-color: var(--faint); color: var(--text); }
 
 #chart-pills {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
   padding: 10px 14px;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border);
 }
-
 .cpill {
-  padding: 4px 10px;
+  padding: 4px 11px;
   border-radius: 20px;
   font-size: 11px;
-  border: 1px solid #333;
+  font-family: var(--font);
+  border: 1px solid var(--border);
   cursor: pointer;
   background: transparent;
-  color: #aaa;
+  color: var(--muted);
+  transition: all 0.15s;
 }
-.cpill.active { background: #185FA5; color: white; border-color: #185FA5; }
+.cpill:hover { border-color: var(--faint); color: var(--text); }
+.cpill.active { background: var(--accent); color: white; border-color: var(--accent); }
 
 #chart-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   padding: 10px 14px;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border);
 }
-
-.cstat { background: #1a1a1a; border-radius: 5px; padding: 7px 8px; }
-.cstat-lbl { font-size: 10px; color: #777; margin-bottom: 2px; }
-.cstat-val { font-size: 17px; font-weight: bold; color: white; }
-.cstat-unit { font-size: 9px; color: #555; margin-left: 2px; }
+.cstat { background: var(--surface); border-radius: 5px; padding: 8px 9px; }
+.cstat-lbl { font-size: 10px; color: var(--muted); margin-bottom: 3px; letter-spacing: 0.03em; }
+.cstat-val { font-size: 17px; font-weight: 500; color: var(--text); }
+.cstat-unit { font-size: 9px; color: var(--muted); margin-left: 2px; }
 
 .status-badge {
   display: inline-block;
   font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 3px;
-  margin-top: 8px 14px 0;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
-.status-bueno    { background: #1a3a1a; color: #5dc45d; }
-.status-regular  { background: #3a2e10; color: #f0a830; }
-.status-malo     { background: #3a1010; color: #e05050; }
-.status-critico  { background: #2a1040; color: #a070f0; }
-.status-nd       { background: #222; color: #666; }
+.status-bueno    { background: #0e2a0e; color: #5dc45d; border: 1px solid #1a4a1a; }
+.status-regular  { background: #2a200a; color: #f0a830; border: 1px solid #4a380a; }
+.status-malo     { background: #2a0e0e; color: #e05050; border: 1px solid #4a1a1a; }
+.status-critico  { background: #1e0e30; color: #a070f0; border: 1px solid #3a1a50; }
+.status-nd       { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
 
 #chart-wrap {
   flex: 1;
-  padding: 10px 14px 12px;
+  padding: 12px 14px;
   position: relative;
   min-height: 180px;
 }
-
 #chart-empty {
-  color: #555;
-  font-size: 13px;
+  color: var(--muted);
+  font-size: 12px;
   text-align: center;
   padding: 40px 20px;
 }
@@ -163,22 +281,25 @@ h2 { margin-top: 0; }
 <body>
 
 <div id="sidebar">
-  <h2>🌫️ Aire Chile</h2>
+  <div id="sidebar-header">
+    <div id="sidebar-title">Aire Chile <span id="sidebar-subtitle" style="font-size:11px;color:var(--muted);font-weight:400">· SINCA</span></div>
+    <select id="filter" style="margin-top:10px">
+      <option value="ALL">Todos los contaminantes</option>
+      <option value="MP-2,5">MP 2.5</option>
+      <option value="MP-10">MP 10</option>
+      <option value="NO2">NO₂</option>
+      <option value="CO">CO</option>
+      <option value="O3">O₃ Ozono</option>
+    </select>
+  </div>
 
-  <select id="filter">
-    <option value="ALL">Todos</option>
-    <option value="MP-2,5">MP 2.5</option>
-    <option value="MP-10">MP 10</option>
-    <option value="NO2">NO2</option>
-    <option value="CO">CO</option>
-    <option value="O3">Ozono</option>
-  </select>
+  <div id="sidebar-body">
+    <div class="section-label">Alertas</div>
+    <div id="alerts"></div>
 
-  <h3>⚠️ Alertas</h3>
-  <div id="alerts"></div>
-
-  <h3>📊 Ranking</h3>
-  <div id="ranking"></div>
+    <div class="section-label">Ranking</div>
+    <div id="ranking"></div>
+  </div>
 </div>
 
 <div id="main">
