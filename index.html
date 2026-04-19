@@ -448,16 +448,6 @@ body {
   
   });
 
-  //FIX MOBILE
-  
-    const observer = new MutationObserver(() => {
-    if (isMobile() && panel.classList.contains('open')) {
-      panel.classList.remove('open');
-    }
-  });
-
-  observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
-
   // Reasignar el botón cerrar del panel para también limpiar overlay
   document.getElementById('chart-close').addEventListener('click', closePanel);
 
