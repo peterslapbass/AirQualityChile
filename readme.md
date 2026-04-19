@@ -134,10 +134,10 @@ Se generan alertas cuando un contaminante supera:
 
 🚀 Futuras mejoras
 
-* 📈 Gráficos de evolución temporal
+* 📈 Gráficos de evolución temporal (ACTUALIZADO 19-04-2026)
 * 🧠 ICA Chile (índice de calidad del aire)
-* 📍 Clustering de estaciones
-* 📱 Versión mobile tipo app
+* 📍 Clustering de estaciones (ACTUALIZADO 19-04-2026, SEGÚN ÍNDICE)
+* 📱 Versión mobile tipo app (ACTUALIZADO 19-04-2026)
 * 🔔 Alertas avanzadas por norma sanitaria
 
 ⸻
