@@ -284,9 +284,8 @@ body {
   z-index: 599;
   opacity: 0;
   transition: opacity 0.25s ease;
-  pointer-events: none;
 }
-#sheet-overlay.visible { opacity: 1; pointer-events: auto; }
+#sheet-overlay.visible { opacity: 1; }
 
 /* ══════════════════════════════
    RESPONSIVE — móvil (≤ 680px)
@@ -300,7 +299,7 @@ body {
     left: 0;
     right: 0;
     width: 100%;
-    height: 70dvh;
+    height: 70vh;
     border-right: none;
     border-top: 1px solid var(--border);
     border-radius: 14px 14px 0 0;
@@ -317,7 +316,7 @@ body {
     left: 0;
     right: 0;
     width: 100%;
-    height: 75dvh;
+    height: 75vh;
     border-left: none;
     border-top: 1px solid var(--border);
     border-radius: 14px 14px 0 0;
@@ -445,7 +444,6 @@ body {
   overlay.addEventListener('click', () => {
     closeSidebar();
     closePanel();
-  
   });
 
   // Reasignar el botón cerrar del panel para también limpiar overlay
