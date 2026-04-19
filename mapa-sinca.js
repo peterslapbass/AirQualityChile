@@ -260,10 +260,15 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       drawSeries(station, pollutants[0]);
     }
-
-    document.getElementById("chart-panel").classList.add("open");
+    
+    if (window.innerWidth > 680) {
+      document.getElementById("chart-panel").classList.add("open");
+    } else {
+      // En móvil NO se abre automáticamente
+      // (opcional: podrías dejar solo el overlay si quisieras)
+    }
+    
     if (window.openChartSheetOverlay) window.openChartSheetOverlay();
-  }
 
   function drawSeries(station, pollutant) {
     const serie   = station.series[pollutant] || [];
