@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let STATIONS = {};
   let CURRENT_FILTER = "ALL";
 
-  /* ─────────────────────────────────────────
+  /* ───────────────────────────────────────── 
      NORMALIZAR
   ───────────────────────────────────────── */
 
@@ -187,9 +187,9 @@ document.addEventListener("DOMContentLoaded", function () {
         `<div style="font-size:10px;color:#555;margin-top:6px">${s.values[0]?.[1]?.time || ""}</div>`
       );
 
-      // Clic abre panel de series
+      // Clic abre panel de series — pasar objeto original con values como dict
       marker.on("click", () => {
-        openChartPanel(s);
+        openChartPanel(STATIONS[s.name]);
       });
     });
 
