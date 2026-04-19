@@ -173,12 +173,18 @@ document.addEventListener("DOMContentLoaded", function () {
         fillOpacity: 0.85
       }).addTo(layer);
 
-      // Popup rápido (como antes)
+      // Popup rápido
       marker.bindPopup(
-        `<b>${s.name}</b><hr>` +
+        `<b>${s.name}</b>` +
+        `<div style="font-size:10px;color:#888;margin:2px 0 6px">${s.comuna} · ${s.region}</div>` +
+        `<hr>` +
         s.values.map(v =>
-          `${v[0]}: ${v[1].value} ${v[1].unit}<br><small>${v[1].time}</small><br>`
-        ).join("")
+          `<div style="display:flex;justify-content:space-between;gap:12px;padding:2px 0">` +
+          `<span style="color:#aaa">${v[0]}</span>` +
+          `<span style="font-weight:500">${v[1].value} <span style="color:#555;font-size:10px">${v[1].unit}</span></span>` +
+          `</div>`
+        ).join("") +
+        `<div style="font-size:10px;color:#555;margin-top:6px">${s.values[0]?.[1]?.time || ""}</div>`
       );
 
       // Clic abre panel de series
@@ -190,19 +196,33 @@ document.addEventListener("DOMContentLoaded", function () {
     // Ranking
     const ranking = [...processed].sort((a, b) => b.worst - a.worst);
     document.getElementById("ranking").innerHTML =
-      ranking.slice(0, 10).map(s => `
-        <div class="card">
-          <b>${s.name}</b><br>
-          peor valor: ${s.worst}
+      ranking.slice(0, 10).map((s, i) => `
+        <div class="rank-item" data-key="${s.name}">
+          <span class="rank-num">${i + 1}</span>
+          <span class="rank-dot" style="background:${color(s.worst)}"></span>
+          <span class="rank-name">${s.name}</span>
+          <span class="rank-val">${s.worst}</span>
         </div>
       `).join("");
 
+    // Clic en ranking abre panel
+    document.querySelectorAll(".rank-item").forEach(el => {
+      el.addEventListener("click", () => {
+        const s = STATIONS[el.dataset.key];
+        if (s) openChartPanel(s);
+      });
+    });
+
     // Alertas
     const alerts = ranking.filter(s => s.worst > 100);
-    document.getElementById("alerts").innerHTML =
-      alerts.map(a => `
-        <div class="alert">⚠️ ${a.name} (${a.worst})</div>
-      `).join("");
+    document.getElementById("alerts").innerHTML = alerts.length
+      ? alerts.map(a => `
+          <div class="alert-item">
+            <span class="alert-name">${a.name}</span>
+            <span class="alert-val">${a.worst}</span>
+          </div>
+        `).join("")
+      : `<div style="font-size:11px;color:var(--muted);padding:4px 0">Sin alertas activas</div>`;
   }
 
   /* ─────────────────────────────────────────
