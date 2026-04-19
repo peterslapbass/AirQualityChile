@@ -12,29 +12,28 @@ body {
   font-family: Arial, sans-serif;
   display: flex;
   height: 100vh;
+  overflow: hidden;
 }
 
-#sidebar {
-  width: 340px;
+#sidebar {e
+  width: 300px;
   background: #111;
   color: white;
   padding: 15px;
   overflow-y: auto;
+  flex-shrink: 0;
 }
 
 h2 { margin-top: 0; }
-
-.filter { margin-bottom: 10px; }
 
 #main {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-#map {
-  flex: 1;
-}
+#map { flex: 1; }
 
 .card {
   background: #1e1e1e;
@@ -49,10 +48,118 @@ h2 { margin-top: 0; }
   margin: 5px 0;
   border-left: 4px solid red;
 }
+
+/* ── Panel series temporales ── */
+#chart-panel {
+  width: 360px;
+  background: #111;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-left: 1px solid #2a2a2a;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+
+#chart-panel.open { transform: translateX(0); }
+
+#chart-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid #2a2a2a;
+  gap: 8px;
+}
+
+#chart-station-name {
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1.3;
+  flex: 1;
+}
+
+#chart-region {
+  font-size: 11px;
+  color: #666;
+  font-weight: normal;
+  margin-top: 2px;
+}
+
+#chart-close {
+  background: none;
+  border: 1px solid #333;
+  color: #aaa;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 8px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+#chart-close:hover { background: #222; color: white; }
+
+#chart-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.cpill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  border: 1px solid #333;
+  cursor: pointer;
+  background: transparent;
+  color: #aaa;
+}
+.cpill.active { background: #185FA5; color: white; border-color: #185FA5; }
+
+#chart-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.cstat { background: #1a1a1a; border-radius: 5px; padding: 7px 8px; }
+.cstat-lbl { font-size: 10px; color: #777; margin-bottom: 2px; }
+.cstat-val { font-size: 17px; font-weight: bold; color: white; }
+.cstat-unit { font-size: 9px; color: #555; margin-left: 2px; }
+
+.status-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-top: 8px 14px 0;
+}
+.status-bueno    { background: #1a3a1a; color: #5dc45d; }
+.status-regular  { background: #3a2e10; color: #f0a830; }
+.status-malo     { background: #3a1010; color: #e05050; }
+.status-critico  { background: #2a1040; color: #a070f0; }
+.status-nd       { background: #222; color: #666; }
+
+#chart-wrap {
+  flex: 1;
+  padding: 10px 14px 12px;
+  position: relative;
+  min-height: 180px;
+}
+
+#chart-empty {
+  color: #555;
+  font-size: 13px;
+  text-align: center;
+  padding: 40px 20px;
+}
 </style>
 
 </head>
-
 <body>
 
 <div id="sidebar">
@@ -78,9 +185,24 @@ h2 { margin-top: 0; }
   <div id="map"></div>
 </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<div id="chart-panel">
+  <div id="chart-panel-header">
+    <div>
+      <div id="chart-station-name">—</div>
+      <div id="chart-region"></div>
+    </div>
+    <button id="chart-close">✕</button>
+  </div>
+  <div id="chart-pills"></div>
+  <div id="chart-stats"></div>
+  <div id="chart-wrap">
+    <canvas id="seriesChart" role="img" aria-label="Serie horaria del contaminante">Datos SINCA</canvas>
+    <div id="chart-empty"></div>
+  </div>
+</div>
 
-<!-- 🔥 TU JS ORIGINAL (SIN CAMBIAR NOMBRE) -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="mapa-sinca.js" defer></script>
 
 </body>
