@@ -297,6 +297,10 @@ document.addEventListener("DOMContentLoaded", function () {
       <div class="cstat-lbl">Humedad</div>
       <div class="cstat-val">${station.humidity ?? "—"}<span class="cstat-unit"> %</span></div>
     </div>
+    <div class="cstat">
+      <div class="cstat-lbl">Presión</div>
+      <div class="cstat-val">${station.pressure ?? "—"}<span class="cstat-unit"> hPa</span></div>
+  </div>
   `;
 
   // Ocultar gráfico
