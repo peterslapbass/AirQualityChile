@@ -2,7 +2,7 @@ name: Actualizar datos SINCA
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -23,45 +23,87 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Instalar requests
-        run: pip install requests
+      - name: Instalar dependencias
+        run: pip install requests numpy scipy
 
+      # =========================
+      # DESCARGA SINCA
+      # =========================
       - name: Descargar datos SINCA
         run: |
           python - <<EOF
           import requests, json
-      
+
           url = "https://sinca.mma.gob.cl/index.php/json/listadomapa2k19"
-      
+
           try:
               response = requests.get(url, timeout=10)
               response.raise_for_status()
               data = response.json()
-      
+
               with open("datos_sinca.json", "w", encoding="utf-8") as f:
                   json.dump(data, f, ensure_ascii=False)
-      
-              print("Datos actualizados correctamente")
-      
+
+              print("Datos SINCA actualizados correctamente")
+
           except Exception as e:
               print("Error:", e)
               exit(1)
           EOF
 
-      - name: Commit y push
+      # =========================
+      # DESCARGA METEO RAW
+      # =========================
+      - name: Descargar datos meteo
+        run: |
+          python - <<EOF
+          import requests, json
+
+          url = "https://redmeteo.cl/publicapi/last-data.json"
+
+          try:
+              response = requests.get(url, timeout=10)
+              response.raise_for_status()
+              data = response.json()
+
+              with open("datos_meteo_raw.json", "w", encoding="utf-8") as f:
+                  json.dump(data, f, ensure_ascii=False)
+
+              print("Datos meteo raw actualizados correctamente")
+
+          except Exception as e:
+              print("Error:", e)
+              exit(1)
+          EOF
+
+      # =========================
+      # PROCESAR METEO
+      # =========================
+      - name: Procesar datos meteo
+        run: python scripts/process_meteo.py
+
+      # =========================
+      # GENERAR WIND FIELD
+      # =========================
+      - name: Generar wind field
+        run: python scripts/generate_wind_field.py
+
+      # =========================
+      # COMMIT Y PUSH
+      # =========================
+      - name: Commit y push cambios
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      
-          git add datos_sinca.json
-      
+
+          git add datos_sinca.json datos_meteo_raw.json datos_meteo.json wind_field.json
+
           if git diff --cached --quiet; then
             echo "No hay cambios"
-          else
-            git commit -m "Actualiza datos SINCA"
-            
-            git pull --rebase origin main
-            
-            git push origin main
+            exit 0
           fi
-              
+
+          git commit -m "Actualiza datos SINCA + meteo + wind field"
+
+          git pull --rebase origin main
+          git push origin main
