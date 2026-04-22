@@ -80,13 +80,13 @@ jobs:
       # PROCESAR METEO
       # =========================
       - name: Procesar datos meteo
-        run: python process_meteo.py
+        run: python scripts/process_meteo.py
 
       # =========================
       # GENERAR WIND FIELD
       # =========================
       - name: Generar wind field
-        run: python generate_wind_field.py
+        run: python scripts/generate_wind_field.py
 
       # =========================
       # COMMIT Y PUSH
