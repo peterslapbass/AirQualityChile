@@ -7,7 +7,6 @@
     "wind_dir": 278.0,
     "temp": 21.5,
     "humidity": 73.0,
-    "UV": 4.0,
     "pressure": 1016.91,
     "rain": 0.0
   },
@@ -19,7 +18,6 @@
     "wind_dir": 35.0,
     "temp": 20.7,
     "humidity": 75.0,
-    "UV": 0.0,
     "pressure": 1015.71,
     "rain": 0.0
   },
@@ -31,7 +29,6 @@
     "wind_dir": 274.0,
     "temp": 20.4,
     "humidity": 76.0,
-    "UV": 16.0,
     "pressure": 1016.23,
     "rain": 0.0
   },
@@ -43,7 +40,6 @@
     "wind_dir": 79.0,
     "temp": 19.0,
     "humidity": 76.0,
-    "UV": 0.0,
     "pressure": 1010.11,
     "rain": 0.0
   },
@@ -55,7 +51,6 @@
     "wind_dir": 300.0,
     "temp": 18.8,
     "humidity": 29.0,
-    "UV": 6.0,
     "pressure": 947.45,
     "rain": 0.0
   },
@@ -67,7 +62,6 @@
     "wind_dir": 271.0,
     "temp": 20.0,
     "humidity": 28.0,
-    "UV": 4.0,
     "pressure": 937.32,
     "rain": 0.0
   },
@@ -79,7 +73,6 @@
     "wind_dir": 153.0,
     "temp": 18.8,
     "humidity": 87.0,
-    "UV": 3.0,
     "pressure": 1017.89,
     "rain": 0.0
   },
@@ -91,7 +84,6 @@
     "wind_dir": 221.0,
     "temp": 16.3,
     "humidity": 76.0,
-    "UV": 0.0,
     "pressure": 1017.67,
     "rain": 0.0
   },
@@ -103,7 +95,6 @@
     "wind_dir": 34.0,
     "temp": 16.8,
     "humidity": 70.0,
-    "UV": 2.0,
     "pressure": 1017.67,
     "rain": 0.0
   },
@@ -115,7 +106,6 @@
     "wind_dir": 104.0,
     "temp": 19.5,
     "humidity": 64.0,
-    "UV": 4.0,
     "pressure": 999.74,
     "rain": 0.0
   },
@@ -127,7 +117,6 @@
     "wind_dir": 348.0,
     "temp": 15.4,
     "humidity": 75.0,
-    "UV": 0.0,
     "pressure": 1016.41,
     "rain": 0.0
   },
@@ -139,7 +128,6 @@
     "wind_dir": 336.0,
     "temp": 14.3,
     "humidity": 77.0,
-    "UV": 0.0,
     "pressure": 1016.75,
     "rain": 0.0
   },
@@ -151,7 +139,6 @@
     "wind_dir": 250.0,
     "temp": 14.8,
     "humidity": 69.0,
-    "UV": 0.0,
     "pressure": 1019.15,
     "rain": 0.0
   },
@@ -163,7 +150,6 @@
     "wind_dir": 136.0,
     "temp": 23.9,
     "humidity": 75.0,
-    "UV": 0.0,
     "pressure": 1022.7,
     "rain": 0.0
   },
@@ -175,8 +161,18 @@
     "wind_dir": 198.0,
     "temp": 12.8,
     "humidity": 1.0,
-    "UV": 3.0,
     "pressure": 1015.1,
+    "rain": 0.0
+  },
+  {
+    "name": "Zapallar - Catapilco",
+    "lat": -32.5703,
+    "lon": -71.3022,
+    "wind_speed": 1.4,
+    "wind_dir": 194.0,
+    "temp": 17.9,
+    "humidity": 63.0,
+    "pressure": 1009.94,
     "rain": 0.0
   },
   {
@@ -187,7 +183,6 @@
     "wind_dir": 74.0,
     "temp": 18.7,
     "humidity": 62.0,
-    "UV": 3.0,
     "pressure": 1014.0,
     "rain": 0.0
   },
@@ -199,7 +194,6 @@
     "wind_dir": 5.0,
     "temp": 12.4,
     "humidity": 77.0,
-    "UV": 0.0,
     "pressure": 1017.92,
     "rain": 0.0
   },
@@ -211,7 +205,6 @@
     "wind_dir": 246.0,
     "temp": 26.6,
     "humidity": 45.0,
-    "UV": 6.0,
     "pressure": 983.9,
     "rain": 0.0
   },
@@ -223,7 +216,6 @@
     "wind_dir": 8.0,
     "temp": 16.2,
     "humidity": 68.0,
-    "UV": 4.0,
     "pressure": 988.7,
     "rain": 0.0
   },
@@ -235,7 +227,6 @@
     "wind_dir": 44.0,
     "temp": 18.0,
     "humidity": 59.0,
-    "UV": 2.0,
     "pressure": 926.4,
     "rain": 0.0
   },
@@ -247,7 +238,6 @@
     "wind_dir": 11.0,
     "temp": 17.1,
     "humidity": 68.0,
-    "UV": 2.0,
     "pressure": 1006.54,
     "rain": 0.0
   },
@@ -259,7 +249,6 @@
     "wind_dir": 315.0,
     "temp": 14.3,
     "humidity": 68.0,
-    "UV": 0.0,
     "pressure": 1019.23,
     "rain": 0.0
   },
@@ -267,11 +256,10 @@
     "name": "Re\u00f1aca",
     "lat": -32.9762,
     "lon": -71.5364,
-    "wind_speed": 0.5,
-    "wind_dir": 343.0,
-    "temp": 14.6,
-    "humidity": 76.0,
-    "UV": 0.0,
+    "wind_speed": 1.1,
+    "wind_dir": 318.0,
+    "temp": 14.8,
+    "humidity": 75.0,
     "pressure": 984.0,
     "rain": 0.0
   },
@@ -283,7 +271,6 @@
     "wind_dir": 228.0,
     "temp": 14.5,
     "humidity": 74.0,
-    "UV": 3.0,
     "pressure": 1019.5,
     "rain": 0.0
   },
@@ -291,12 +278,11 @@
     "name": "Vi\u00f1a del Mar - Santa Julia",
     "lat": -33.0052,
     "lon": -71.4995,
-    "wind_speed": 0.8,
-    "wind_dir": 171.0,
-    "temp": 18.9,
-    "humidity": 59.0,
-    "UV": 4.0,
-    "pressure": 1020.9,
+    "wind_speed": 1.3,
+    "wind_dir": 170.0,
+    "temp": 18.3,
+    "humidity": 61.0,
+    "pressure": 1020.6,
     "rain": 0.0
   },
   {
@@ -307,8 +293,18 @@
     "wind_dir": 26.0,
     "temp": 18.9,
     "humidity": 58.0,
-    "UV": 2.0,
     "pressure": 1013.84,
+    "rain": 0.0
+  },
+  {
+    "name": "Vi\u00f1a del Mar - Club de Yates Recreo (IFOP)",
+    "lat": -33.0264,
+    "lon": -71.5802,
+    "wind_speed": 1.6,
+    "wind_dir": 319.0,
+    "temp": 12.7,
+    "humidity": 75.6,
+    "pressure": 1020.4,
     "rain": 0.0
   },
   {
@@ -319,7 +315,6 @@
     "wind_dir": 143.0,
     "temp": 18.6,
     "humidity": 53.0,
-    "UV": 4.0,
     "pressure": 991.4,
     "rain": 0.0
   },
@@ -331,7 +326,6 @@
     "wind_dir": 314.0,
     "temp": 12.7,
     "humidity": 79.3,
-    "UV": 1.0,
     "pressure": 1018.7,
     "rain": 0.0
   },
@@ -343,7 +337,6 @@
     "wind_dir": 329.0,
     "temp": 12.9,
     "humidity": 82.0,
-    "UV": 0.0,
     "pressure": 1016.67,
     "rain": 0.0
   },
@@ -352,10 +345,9 @@
     "lat": -33.0447,
     "lon": -71.6122,
     "wind_speed": 0.0,
-    "wind_dir": 44.0,
-    "temp": 15.3,
-    "humidity": 70.0,
-    "UV": 1.0,
+    "wind_dir": 46.0,
+    "temp": 15.7,
+    "humidity": 68.0,
     "pressure": 1018.3,
     "rain": 0.0
   },
@@ -367,7 +359,6 @@
     "wind_dir": 66.0,
     "temp": 17.9,
     "humidity": 55.0,
-    "UV": 4.0,
     "pressure": 990.1,
     "rain": 0.0
   },
@@ -379,7 +370,6 @@
     "wind_dir": 68.0,
     "temp": 18.2,
     "humidity": 57.0,
-    "UV": 2.0,
     "pressure": 1016.71,
     "rain": 0.0
   },
@@ -387,24 +377,22 @@
     "name": "Villa Alemana - Pe\u00f1a Blanca",
     "lat": -33.0526,
     "lon": -71.3548,
-    "wind_speed": 1.3,
-    "wind_dir": 34.0,
-    "temp": 17.8,
-    "humidity": 63.0,
-    "UV": 3.0,
-    "pressure": 1003.1,
+    "wind_speed": 0.3,
+    "wind_dir": 348.0,
+    "temp": 18.2,
+    "humidity": 61.0,
+    "pressure": 1002.6,
     "rain": 0.0
   },
   {
     "name": "Placilla de Pe\u00f1uelas - Salto de Agua",
     "lat": -33.1197,
     "lon": -71.5812,
-    "wind_speed": 0.6,
-    "wind_dir": 168.0,
+    "wind_speed": 0.5,
+    "wind_dir": 106.0,
     "temp": 20.5,
     "humidity": 46.0,
-    "UV": 3.0,
-    "pressure": 941.5,
+    "pressure": 941.6,
     "rain": 0.0
   },
   {
@@ -415,7 +403,6 @@
     "wind_dir": 134.0,
     "temp": 17.0,
     "humidity": 82.0,
-    "UV": 3.0,
     "pressure": 994.6,
     "rain": 0.0
   },
@@ -427,8 +414,18 @@
     "wind_dir": 86.0,
     "temp": 18.4,
     "humidity": 63.0,
-    "UV": 3.0,
     "pressure": 1008.46,
+    "rain": 0.0
+  },
+  {
+    "name": "Casablanca - Centro",
+    "lat": -33.31381,
+    "lon": -71.4089,
+    "wind_speed": 0.0,
+    "wind_dir": 299.0,
+    "temp": 15.0,
+    "humidity": 67.0,
+    "pressure": 958.2,
     "rain": 0.0
   },
   {
@@ -439,7 +436,6 @@
     "wind_dir": 181.0,
     "temp": 14.7,
     "humidity": 74.0,
-    "UV": 0.0,
     "pressure": 1011.29,
     "rain": 0.0
   },
@@ -451,7 +447,6 @@
     "wind_dir": 259.0,
     "temp": 17.7,
     "humidity": 79.0,
-    "UV": 0.0,
     "pressure": 1022.12,
     "rain": 0.2
   },
@@ -463,7 +458,6 @@
     "wind_dir": 179.0,
     "temp": 15.1,
     "humidity": 63.0,
-    "UV": 2.0,
     "pressure": 951.39,
     "rain": 0.0
   },
@@ -475,7 +469,6 @@
     "wind_dir": 189.0,
     "temp": 17.6,
     "humidity": 61.0,
-    "UV": 2.0,
     "pressure": 912.71,
     "rain": 0.0
   },
@@ -487,8 +480,18 @@
     "wind_dir": 43.0,
     "temp": 15.3,
     "humidity": 46.0,
-    "UV": 3.0,
     "pressure": 818.9,
+    "rain": 0.0
+  },
+  {
+    "name": "San Miguel",
+    "lat": -33.5069,
+    "lon": -70.6508,
+    "wind_speed": 1.7,
+    "wind_dir": 293.0,
+    "temp": 14.6,
+    "humidity": 61.0,
+    "pressure": 954.1,
     "rain": 0.0
   },
   {
@@ -496,11 +499,10 @@
     "lat": -33.5148,
     "lon": -70.6639,
     "wind_speed": 0.3,
-    "wind_dir": 59.0,
-    "temp": 14.5,
-    "humidity": 70.0,
-    "UV": 2.0,
-    "pressure": 956.6,
+    "wind_dir": 41.0,
+    "temp": 14.8,
+    "humidity": 69.0,
+    "pressure": 956.4,
     "rain": 0.0
   },
   {
@@ -511,7 +513,6 @@
     "wind_dir": 0.0,
     "temp": 16.9,
     "humidity": 48.0,
-    "UV": 1.0,
     "pressure": 881.06,
     "rain": 0.0
   },
@@ -523,7 +524,6 @@
     "wind_dir": 151.0,
     "temp": 13.6,
     "humidity": 96.0,
-    "UV": 3.0,
     "pressure": 940.33,
     "rain": 0.0
   },
@@ -535,7 +535,6 @@
     "wind_dir": 170.0,
     "temp": 16.1,
     "humidity": 64.0,
-    "UV": 4.0,
     "pressure": 963.2,
     "rain": 0.0
   },
@@ -547,7 +546,6 @@
     "wind_dir": 323.0,
     "temp": 14.4,
     "humidity": 86.0,
-    "UV": 3.0,
     "pressure": 1007.01,
     "rain": 0.0
   },
@@ -556,10 +554,9 @@
     "lat": -33.7895,
     "lon": -70.635,
     "wind_speed": 0.0,
-    "wind_dir": 159.0,
-    "temp": 14.2,
-    "humidity": 67.0,
-    "UV": 3.0,
+    "wind_dir": 179.0,
+    "temp": 15.9,
+    "humidity": 63.0,
     "pressure": 968.1,
     "rain": 0.0
   },
@@ -568,11 +565,10 @@
     "lat": -33.8349,
     "lon": -70.7621,
     "wind_speed": 0.8,
-    "wind_dir": 163.0,
-    "temp": 16.0,
-    "humidity": 61.0,
-    "UV": 3.0,
-    "pressure": 976.0,
+    "wind_dir": 128.0,
+    "temp": 16.7,
+    "humidity": 59.0,
+    "pressure": 975.9,
     "rain": 0.0
   },
   {
@@ -583,7 +579,6 @@
     "wind_dir": 179.0,
     "temp": 17.1,
     "humidity": 61.0,
-    "UV": 0.0,
     "pressure": 1020.75,
     "rain": 0.0
   },
@@ -595,8 +590,18 @@
     "wind_dir": 244.0,
     "temp": 16.6,
     "humidity": 48.0,
-    "UV": 1.0,
     "pressure": 1022.04,
+    "rain": 0.0
+  },
+  {
+    "name": "Talcahuano - Faro Isla Quiriquina (SERVIMET)",
+    "lat": -36.62582,
+    "lon": -73.0607,
+    "wind_speed": 1.3,
+    "wind_dir": 184.0,
+    "temp": 12.8,
+    "humidity": 88.0,
+    "pressure": 1019.76,
     "rain": 0.0
   },
   {
@@ -607,7 +612,6 @@
     "wind_dir": 92.0,
     "temp": 13.5,
     "humidity": 88.0,
-    "UV": 0.0,
     "pressure": 1023.98,
     "rain": 0.0
   },
@@ -619,8 +623,18 @@
     "wind_dir": 330.0,
     "temp": 14.8,
     "humidity": 91.0,
-    "UV": 2.0,
     "pressure": 1014.24,
+    "rain": 0.0
+  },
+  {
+    "name": "Hualp\u00e9n - Faro Punta Hualp\u00e9n (SERVIMET)",
+    "lat": -36.74769,
+    "lon": -73.1913,
+    "wind_speed": 0.0,
+    "wind_dir": 7.0,
+    "temp": 13.9,
+    "humidity": 100.0,
+    "pressure": 1011.35,
     "rain": 0.0
   },
   {
@@ -631,7 +645,6 @@
     "wind_dir": 131.0,
     "temp": 15.5,
     "humidity": 82.0,
-    "UV": 1.0,
     "pressure": 1022.52,
     "rain": 0.0
   },
@@ -643,7 +656,6 @@
     "wind_dir": 198.0,
     "temp": 12.8,
     "humidity": 95.0,
-    "UV": 0.0,
     "pressure": 1022.88,
     "rain": 0.0
   },
@@ -655,7 +667,6 @@
     "wind_dir": 5.0,
     "temp": 12.9,
     "humidity": 94.0,
-    "UV": 0.0,
     "pressure": 1024.02,
     "rain": 0.0
   },
@@ -667,7 +678,6 @@
     "wind_dir": 110.0,
     "temp": 14.9,
     "humidity": 72.0,
-    "UV": 2.0,
     "pressure": 1011.18,
     "rain": 0.0
   },
@@ -679,7 +689,6 @@
     "wind_dir": 148.0,
     "temp": 14.6,
     "humidity": 85.0,
-    "UV": 1.0,
     "pressure": 996.1,
     "rain": 0.0
   },
@@ -691,7 +700,6 @@
     "wind_dir": 360.0,
     "temp": 16.4,
     "humidity": 80.0,
-    "UV": 0.0,
     "pressure": 1023.86,
     "rain": 0.0
   },
@@ -703,7 +711,6 @@
     "wind_dir": 279.0,
     "temp": 7.4,
     "humidity": 94.0,
-    "UV": 2.0,
     "pressure": 914.2,
     "rain": 0.0
   },
@@ -715,7 +722,6 @@
     "wind_dir": 65.0,
     "temp": 9.1,
     "humidity": 94.0,
-    "UV": 0.0,
     "pressure": 930.61,
     "rain": 0.0
   },
@@ -727,20 +733,51 @@
     "wind_dir": 277.0,
     "temp": 13.2,
     "humidity": 96.0,
-    "UV": 0.0,
     "pressure": 1012.2,
     "rain": 2.0
+  },
+  {
+    "name": "Pitrufqu\u00e9n - Colegio Madres Dominicas",
+    "lat": -38.9856,
+    "lon": -72.6374,
+    "wind_speed": 1.3,
+    "wind_dir": 279.0,
+    "temp": 12.3,
+    "humidity": 94.0,
+    "pressure": 1013.86,
+    "rain": 1.4
+  },
+  {
+    "name": "Loncoche",
+    "lat": -39.3668,
+    "lon": -72.6246,
+    "wind_speed": 1.7,
+    "wind_dir": 248.0,
+    "temp": 10.7,
+    "humidity": 93.0,
+    "pressure": 1016.7,
+    "rain": 7.1
+  },
+  {
+    "name": "Valdivia - Las Minas",
+    "lat": -39.72212,
+    "lon": -73.3619,
+    "wind_speed": 1.8,
+    "wind_dir": 315.0,
+    "temp": 11.7,
+    "humidity": 86.0,
+    "pressure": 981.04,
+    "rain": 5.3
   },
   {
     "name": "Valdivia",
     "lat": -39.8287,
     "lon": -73.2514,
-    "wind_speed": 1.1,
-    "wind_dir": 264.0,
-    "temp": 11.0,
-    "humidity": 94.0,
-    "UV": 1.0,
-    "pressure": 1021.5,
+    "wind_speed": 0.5,
+    "wind_dir": 261.0,
+    "temp": 11.1,
+    "humidity": 92.0,
+    "pressure": 1021.4,
     "rain": 0.0
   },
   {
@@ -751,8 +788,18 @@
     "wind_dir": 93.0,
     "temp": 11.4,
     "humidity": 92.0,
-    "UV": 0.0,
     "pressure": 1023.47,
+    "rain": 0.0
+  },
+  {
+    "name": "Loncotoro, Llanquihue",
+    "lat": -41.2965,
+    "lon": -73.207,
+    "wind_speed": 2.6,
+    "wind_dir": 45.0,
+    "temp": 14.2,
+    "humidity": 81.0,
+    "pressure": 1003.17,
     "rain": 0.0
   },
   {
@@ -763,7 +810,6 @@
     "wind_dir": 329.0,
     "temp": 13.2,
     "humidity": 82.0,
-    "UV": 2.0,
     "pressure": 1011.18,
     "rain": 0.0
   },
@@ -775,7 +821,6 @@
     "wind_dir": 350.0,
     "temp": 12.5,
     "humidity": 83.0,
-    "UV": 0.0,
     "pressure": 1022.58,
     "rain": 0.0
   },
@@ -787,7 +832,6 @@
     "wind_dir": 0.0,
     "temp": 18.8,
     "humidity": 58.3,
-    "UV": 0.0,
     "pressure": 1015.6,
     "rain": 0.0
   },
@@ -799,7 +843,6 @@
     "wind_dir": 336.0,
     "temp": 12.4,
     "humidity": 90.0,
-    "UV": 0.0,
     "pressure": 1022.03,
     "rain": 0.0
   },
@@ -811,7 +854,6 @@
     "wind_dir": 339.0,
     "temp": 11.8,
     "humidity": 86.0,
-    "UV": 0.0,
     "pressure": 1020.76,
     "rain": 0.0
   },
@@ -823,9 +865,30 @@
     "wind_dir": 360.0,
     "temp": 13.3,
     "humidity": 86.0,
-    "UV": 0.0,
     "pressure": 1021.64,
     "rain": 0.0
+  },
+  {
+    "name": "Isla Tab\u00f3n - Alcald\u00eda de Mar (SERVIMET)",
+    "lat": -41.91097,
+    "lon": -73.1383,
+    "wind_speed": 4.8,
+    "wind_dir": 337.0,
+    "temp": 11.4,
+    "humidity": 88.1,
+    "pressure": 1019.5,
+    "rain": 0.0
+  },
+  {
+    "name": "Chepu",
+    "lat": -42.0441,
+    "lon": -73.9512,
+    "wind_speed": 1.2,
+    "wind_dir": 45.0,
+    "temp": 17.7,
+    "humidity": 65.0,
+    "pressure": 1016.12,
+    "rain": 1.5
   },
   {
     "name": "Quemchi - Capitan\u00eda de Puerto (SERVIMET)",
@@ -835,8 +898,18 @@
     "wind_dir": 343.0,
     "temp": 13.0,
     "humidity": 81.0,
-    "UV": 0.0,
     "pressure": 1020.13,
+    "rain": 0.0
+  },
+  {
+    "name": "Dalcahue - Centro",
+    "lat": -42.3795,
+    "lon": -73.6511,
+    "wind_speed": 0.6,
+    "wind_dir": 348.0,
+    "temp": 12.1,
+    "humidity": 72.0,
+    "pressure": 1019.5,
     "rain": 0.0
   },
   {
@@ -847,7 +920,6 @@
     "wind_dir": 0.0,
     "temp": 10.2,
     "humidity": 91.0,
-    "UV": 2.0,
     "pressure": 1014.96,
     "rain": 0.0
   },
@@ -859,8 +931,18 @@
     "wind_dir": 360.0,
     "temp": 11.4,
     "humidity": 91.0,
-    "UV": 1.0,
     "pressure": 1020.42,
+    "rain": 0.0
+  },
+  {
+    "name": "Cucao",
+    "lat": -42.6353,
+    "lon": -74.1061,
+    "wind_speed": 1.8,
+    "wind_dir": 203.0,
+    "temp": 13.0,
+    "humidity": 91.0,
+    "pressure": 1019.23,
     "rain": 0.0
   },
   {
@@ -871,7 +953,6 @@
     "wind_dir": 50.0,
     "temp": 12.3,
     "humidity": 63.0,
-    "UV": 0.0,
     "pressure": 1020.91,
     "rain": 0.0
   },
@@ -883,7 +964,6 @@
     "wind_dir": 310.0,
     "temp": 11.1,
     "humidity": 90.0,
-    "UV": 0.0,
     "pressure": 1017.41,
     "rain": 0.2
   },
@@ -895,7 +975,6 @@
     "wind_dir": 244.0,
     "temp": 12.7,
     "humidity": 85.0,
-    "UV": 0.0,
     "pressure": 1016.24,
     "rain": 0.0
   },
@@ -907,7 +986,6 @@
     "wind_dir": 76.0,
     "temp": 11.2,
     "humidity": 80.0,
-    "UV": 1.0,
     "pressure": 1016.55,
     "rain": 0.0
   },
@@ -919,7 +997,6 @@
     "wind_dir": 205.0,
     "temp": 10.3,
     "humidity": 74.0,
-    "UV": 0.0,
     "pressure": 1013.97,
     "rain": 0.0
   },
@@ -931,7 +1008,6 @@
     "wind_dir": 144.0,
     "temp": 10.1,
     "humidity": 66.0,
-    "UV": 1.0,
     "pressure": 975.15,
     "rain": 0.6
   },
@@ -943,7 +1019,6 @@
     "wind_dir": 25.0,
     "temp": 6.9,
     "humidity": 88.0,
-    "UV": 0.0,
     "pressure": 1003.94,
     "rain": 0.6
   },
@@ -955,7 +1030,6 @@
     "wind_dir": 299.0,
     "temp": 6.6,
     "humidity": 61.9,
-    "UV": 0.0,
     "pressure": 989.4,
     "rain": 0.0
   },
@@ -967,9 +1041,19 @@
     "wind_dir": 158.0,
     "temp": 6.7,
     "humidity": 71.0,
-    "UV": 0.0,
     "pressure": 988.13,
     "rain": 0.3
+  },
+  {
+    "name": "Punta Arenas - Punta Carrera",
+    "lat": -53.5583,
+    "lon": -70.9496,
+    "wind_speed": 2.2,
+    "wind_dir": 315.0,
+    "temp": 7.1,
+    "humidity": 77.0,
+    "pressure": 986.87,
+    "rain": 1.3
   },
   {
     "name": "Timbales - Alcald\u00eda de Mar (SERVIMET)",
@@ -979,7 +1063,6 @@
     "wind_dir": 225.0,
     "temp": 6.7,
     "humidity": 61.0,
-    "UV": 0.0,
     "pressure": 982.58,
     "rain": 0.0
   },
@@ -991,7 +1074,6 @@
     "wind_dir": 287.0,
     "temp": 7.2,
     "humidity": 64.0,
-    "UV": 1.0,
     "pressure": 986.99,
     "rain": 0.0
   },
@@ -1003,7 +1085,6 @@
     "wind_dir": 315.0,
     "temp": 7.7,
     "humidity": 58.0,
-    "UV": 1.0,
     "pressure": 987.03,
     "rain": 3.8
   },
@@ -1015,7 +1096,6 @@
     "wind_dir": 215.0,
     "temp": 5.6,
     "humidity": 70.0,
-    "UV": 0.0,
     "pressure": 983.71,
     "rain": 0.0
   }
