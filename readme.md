@@ -42,25 +42,23 @@ Integra datos del sistema **SINCA** y estaciones meteorológicas procesadas auto
 - Actualización automática cada **30 minutos**
 - Pipeline ETL con GitHub Actions
 
----
-
 ## 🧱 Arquitectura del sistema
 
-EXTRACT
+-EXTRACT
 ├── SINCA API
 └── Red Meteo API
 
-TRANSFORM
+-TRANSFORM
 ├── process_meteo.py
 └── Normalización de datos
 
-LOAD / COMPUTE
+-LOAD / COMPUTE
 └── generate_wind_field.py
    └── Interpolación de campo de viento
 
-##📁 Estructura del proyecto
+## 📁 Estructura del proyecto
 
-/project
+-/project
 │
 ├── index.html
 ├── app.js
@@ -76,26 +74,26 @@ LOAD / COMPUTE
 └── .github/workflows/update.yml
 
 
-##⚙️ Cómo funciona
-###🌫️ SINCA
--Descarga automática desde API oficial
--Normalización de contaminantes
--Generación de snapshot por estación
-###🌬️ Meteo
--Procesamiento de estaciones meteorológicas
--Extracción de variables:
--viento
--temperatura
--humedad
--presión
-###🧭 Campo de viento
--Conversión a vectores (u, v)
--Interpolación espacial con SciPy
--Generación de grid climático
+## ⚙️ Cómo funciona
+### 🌫️ SINCA
+- Descarga automática desde API oficial
+- Normalización de contaminantes
+- Generación de snapshot por estación
+### 🌬️ Meteo
+- Procesamiento de estaciones meteorológicas
+- Extracción de variables:
+- viento
+- temperatura
+- humedad
+- presión
+### 🧭 Campo de viento
+- Conversión a vectores (u, v)
+- Interpolación espacial con SciPy
+- Generación de grid climático
 
 
-##🧠 Modelo de datos
-###Estación meteorológica
+## 🧠 Modelo de datos
+### Estación meteorológica
 {
   "name": "Estación X",
   "lat": -33.45,
@@ -106,7 +104,7 @@ LOAD / COMPUTE
   "humidity": 55,
   "pressure": 1016.7
 }
-###Campo de viento interpolado
+### Campo de viento interpolado
 {
   "grid_size": 50,
   "bounds": {
@@ -119,43 +117,43 @@ LOAD / COMPUTE
   "v": [[...]]
 }
 
-##🎨 Clasificación de calidad del aire
-Valor	Estado	Color
-0–25	Bueno	🟢
-26–50	Regular	🟡
-51–100	Moderado	🟠
-101–150	Malo	🔴
-150+	Crítico	🟣
+## 🎨 Clasificación de calidad del aire
+- Valor	Estado	Color
+- 0–25	Bueno	🟢
+- 26–50	Regular	🟡
+- 51–100	Moderado	🟠
+- 101–150	Malo	🔴
+- 150+	Crítico	🟣
 
-##🔄 Actualización de datos 
--Cada 30 minutos Ejecutado vía GitHub Actions 
--Sin intervención manual 
+## 🔄 Actualización de datos 
+- Cada 30 minutos Ejecutado vía GitHub Actions 
+- Sin intervención manual 
 
-##🧩 Funcionalidades del mapa 
--🗺️ Marcadores dinámicos por estación 
--🌫️ Capas de contaminantes 
--🌬️ Visualización de viento (vector field) 
--📊 Panel lateral de ranking 
--📱 Adaptación mobile 
+## 🧩 Funcionalidades del mapa 
+- 🗺️ Marcadores dinámicos por estación 
+- 🌫️ Capas de contaminantes 
+- 🌬️ Visualización de viento (vector field) 
+- 📊 Panel lateral de ranking 
+- 📱 Adaptación mobile 
 
-##📌 Notas técnicas Normalización de nombres de contaminantes (MP-2.5, PM25, etc.) 
--Manejo de datasets inconsistentes del SINCA 
--Interpolación espacial con scipy.griddata 
--Separación clara entre extracción y transformación de datos 
--Pipeline automatizado sin intervención manual 
+## 📌 Notas técnicas Normalización de nombres de contaminantes (MP-2.5, PM25, etc.) 
+- Manejo de datasets inconsistentes del SINCA 
+- Interpolación espacial con scipy.griddata 
+- Separación clara entre extracción y transformación de datos 
+- Pipeline automatizado sin intervención manual 
 
-##🚀 Futuras mejoras 
--🧠 Índice de Calidad del Aire (ICA Chile) 
--📍 Clustering geográfico de estaciones
--🌪️ Predicción simple de viento (modelos básicos) 
--📱 Versión PWA (instalable como app) 
--🔔 Alertas personalizadas por usuario 
+## 🚀 Futuras mejoras 
+- 🧠 Índice de Calidad del Aire (ICA Chile) 
+- 📍 Clustering geográfico de estaciones
+- 🌪️ Predicción simple de viento (modelos básicos) 
+- 📱 Versión PWA (instalable como app) 
+- 🔔 Alertas personalizadas por usuario 
 
-##👤 Autor 
--Proyecto de visualización ambiental basado en datos SINCA y meteorología de Chile, desarrollado por Pedro Rubio. 
--Enfoque en: procesamiento de datos ambientales visualización geoespacial automatización con GitHub Actions 
--enfoque “vibecoding” + data engineering ligero 
+## 👤 Autor 
+- Proyecto de visualización ambiental basado en datos SINCA y meteorología de Chile, desarrollado por Pedro Rubio. 
+- Enfoque en: procesamiento de datos ambientales visualización geoespacial automatización con GitHub Actions 
+- Enfoque “vibecoding” + data engineering ligero 
 
-##  🙏🏻 🙏🏼 🙏🏽 🙏🏾 🙏🏿 Agradecimientos 
--Red Meteorológica Aficionada de Chile. (2019). Sitio web RedMeteo. Red Ciudadana De Estaciones Meteorológicas. Desde 22-04-2026, https://www.redmeteo.cl/ 
--SINCA. Sistema de Información Nacional de Calidad del Aire, Ministerio de Medio Ambiente, Gobierno de Chile. Desde 22-04-2026, https://sinca.mma.gob.cl
+## 🙏🏻 🙏🏼 🙏🏽 🙏🏾 🙏🏿 Agradecimientos 
+- Red Meteorológica Aficionada de Chile. (2019). Sitio web RedMeteo. Red Ciudadana De Estaciones Meteorológicas. Desde 22-04-2026, https://www.redmeteo.cl/ 
+- SINCA. Sistema de Información Nacional de Calidad del Aire, Ministerio de Medio Ambiente, Gobierno de Chile. Desde 22-04-2026, https://sinca.mma.gob.cl
