@@ -1,4 +1,4 @@
-# 🌫️ Dashboard Calidad del Aire Chile (SINCA + Meteo)
+# 🌫️ Dashboard Calidad del Aire Chile (SINCA + RedMeteo)
 
 Dashboard interactivo en tiempo real para visualizar calidad del aire y condiciones meteorológicas en Chile.
 
