@@ -25,7 +25,6 @@ for s in stations_raw:
             "temp": float(s.get("temperatura", 0)),
             "humidity": float(s.get("humedad", 0)),
             "pressure": float(s.get("presion_absoluta", 0)),
-            "rain": float(s.get("precipitacion", 0))
         })
 
     except Exception as e:
