@@ -1,86 +1,105 @@
-🌫️ Dashboard Calidad del Aire Chile (SINCA)
+🌫️ Dashboard Calidad del Aire Chile (SINCA + Meteo)
 
-Dashboard interactivo en tiempo real para visualizar contaminantes atmosféricos en Chile, utilizando datos del sistema SINCA. Incluye mapa, filtros por contaminante, ranking de estaciones y alertas automáticas.
-
-https://peterslapbass.github.io/mapa-sinca/
-
-⸻
+Dashboard interactivo en tiempo real para visualizar calidad del aire y condiciones meteorológicas en Chile, integrando datos del sistema SINCA y estaciones meteorológicas procesadas automáticamente mediante GitHub Actions.
 
 🚀 Características
 
-* 🗺️ Mapa interactivo con Leaflet
-* 🌫️ Visualización de contaminantes:
-    * MP 2.5
-    * MP 10
-    * NO₂
-    * CO
-    * O₃
-* 🎛️ Filtros por contaminante o vista general
-* 📊 Ranking de estaciones con peor calidad del aire
-* ⚠️ Sistema de alertas automáticas
-* 🧠 Unidades normalizadas automáticamente
-* ⏱️ Datos en tiempo real (refresh automático)
+🗺️ Mapa interactivo con Leaflet
+🌫️ Visualización de contaminantes atmosféricos:
 
-⸻
+MP 2.5
+MP 10
+NO₂
+CO
+O₃
 
-🧱 Tecnologías
+🌬️ Integración meteorológica:
 
-* HTML5
-* CSS3
-* JavaScript (Vanilla)
-* Leaflet.js￼
-* Datos SINCA (JSON local)
+Velocidad del viento
+Dirección del viento
+Temperatura
+Humedad
+Presión
 
-⸻
+🧭 Campo de viento interpolado (wind field grid)
+
+📊 Ranking de estaciones con peor calidad del aire
+⚠️ Sistema de alertas automáticas por umbral crítico
+🎛️ Filtros por contaminante y vista general
+🧠 Normalización automática de datos heterogéneos
+⏱️ Actualización automática cada 30 minutos
+
+🧱 Arquitectura del sistema
+
+El proyecto funciona como un pipeline automático de datos:
+
+🔄 ETL automático (GitHub Actions)
+Extract
+SINCA API
+Red Meteo API
+Transform
+process_meteo.py
+Normalización de estaciones meteorológicas
+Load / Compute
+generate_wind_field.py
+Interpolación de campo de viento (grid)
 
 📁 Estructura del proyecto
-
 /project
 │
 ├── index.html
 ├── app.js
+│
+├── process_meteo.py
+├── generate_wind_field.py
+│
 ├── datos_sinca.json
-└── README.md
-
-⸻
+├── datos_meteo_raw.json
+├── datos_meteo.json
+├── wind_field.json
+│
+└── .github/workflows/update.yml
 
 ⚙️ Cómo funciona
+🌫️ Datos SINCA
+Se descargan automáticamente desde API oficial
+Se almacenan en datos_sinca.json
+🌬️ Datos meteorológicos
+Se obtienen desde Red Meteo
+Se procesan y normalizan en datos_meteo.json
+🧭 Campo de viento
+Se convierten velocidades y direcciones a vectores (u, v)
+Se interpola una grilla espacial con scipy
+Resultado: wind_field.json
 
-1. El sistema carga datos desde datos_sinca.json
-2. Normaliza nombres de contaminantes
-3. Agrupa datos por estación
-4. Clasifica contaminantes:
-    * MP-2.5
-    * MP-10
-    * NO₂
-    * CO
-    * O₃
-5. Renderiza:
-    * Marcadores en mapa
-    * Ranking lateral
-    * Alertas críticas
+🧠 Modelo de datos
+Estaciones meteorológicas
 
-⸻
-
-🧠 Lógica de datos
-
-Cada estación se estructura así:
-
-STATIONS = {
-  "Puente Alto": {
-    lat: -33.5,
-    lon: -70.6,
-    values: {
-      "MP-2,5": { value: 21, time: "2026-04-17 12:21" },
-      "NO2": { value: 18, time: "2026-04-17 12:21" }
-    }
-  }
+{
+  "name": "Estación X",
+  "lat": -33.45,
+  "lon": -70.66,
+  "wind_speed": 4.2,
+  "wind_dir": 180,
+  "temp": 18.5,
+  "humidity": 55
 }
 
-⸻
+Campo de viento interpolado
 
-🎨 Clasificación de colores
+{
+  "grid_size": 50,
+  "bounds": {
+    "min_lat": -34.0,
+    "max_lat": -32.0,
+    "min_lon": -71.5,
+    "max_lon": -69.5
+  },
+  "u": [[...]],
+  "v": [[...]]
+}
 
+🎨 Clasificación de calidad del aire
 Valor	Estado	Color
 0–25	Bueno	🟢 Verde
 26–50	Regular	🟡 Amarillo
@@ -88,63 +107,49 @@ Valor	Estado	Color
 101–150	Malo	🔴 Rojo
 150+	Crítico	🟣 Morado
 
-⸻
-
 🔄 Actualización de datos
+Cada 30 minutos
+Ejecutado vía GitHub Actions
+Sin intervención manual
 
-Los datos se refrescan automáticamente cada:
+🧩 Funcionalidades del mapa
 
-300000 ms (5 minutos)
-
-⸻
-
-⚠️ Alertas
-
-Se generan alertas cuando un contaminante supera:
-
-> 100
-
-⸻
-
-🧩 Filtros
-
-* ALL → muestra todos los contaminantes
-* MP-2,5
-* MP-10
-* NO2
-* CO
-* O3
-
-⸻
+🗺️ Marcadores dinámicos por estación
+🌫️ Capas de contaminantes
+🌬️ Visualización de viento (vector field)
+📊 Panel lateral de ranking
+📱 Adaptación mobile
 
 📌 Notas técnicas
-
-* Se utiliza normalización de texto para manejar acentos y HTML entities
-* Los contaminantes se detectan por matching flexible (ej: “pm25”, “mp-2,5”)
-* Los valores se extraen automáticamente desde estructuras variables del SINCA
-* El sistema prioriza robustez sobre formato estricto de datos
-
-⸻
-
-📷 Preview
-
-(puedes agregar screenshot aquí)
-
-⸻
+Normalización de nombres de contaminantes (MP-2.5, PM25, etc.)
+Manejo de datasets inconsistentes del SINCA
+Interpolación espacial con scipy.griddata
+Separación clara entre extracción y transformación de datos
+Pipeline automatizado sin intervención manual
 
 🚀 Futuras mejoras
+📈 Gráficos de series temporales por estación
+🧠 Índice de Calidad del Aire (ICA Chile)
+📍 Clustering geográfico de estaciones
+🌪️ Predicción simple de viento (modelos básicos)
+📱 Versión PWA (instalable como app)
+🔔 Alertas personalizadas por usuario
 
-* 📈 Gráficos de evolución temporal (ACTUALIZADO 19-04-2026)
-* 🧠 ICA Chile (índice de calidad del aire)
-* 📍 Clustering de estaciones (ACTUALIZADO 19-04-2026, SEGÚN ÍNDICE)
-* 📱 Versión mobile tipo app (ACTUALIZADO 19-04-2026)
-* 🔔 Alertas avanzadas por norma sanitaria
-
-⸻
 
 👤 Autor
 
-Proyecto de visualización ambiental basado en datos SINCA, creado por Pedro Rubio por vibecoding.
-Desarrollado con enfoque en análisis de datos y visualización geográfica.
+Proyecto de visualización ambiental basado en datos SINCA y meteorología de Chile, desarrollado por Pedro Rubio.
 
-⸻
+Enfoque en:
+
+procesamiento de datos ambientales
+visualización geoespacial
+automatización con GitHub Actions
+enfoque “vibecoding” + data engineering ligero
+Gracias a:
+
+-Red Meteorológica Aficionada de Chile. (2019). Sitio web RedMeteo. Red Ciudadana De Estaciones Meteorológicas. Desde 22-04-2026, https://www.redmeteo.cl/
+
+-SINCA. Sistema de Información Nacional de Calidad del Aire, Ministerio de Medio Ambiente, Gobierno de Chile. Desde  22-04-2026, https://sinca.mma.gob.cl 
+
+
