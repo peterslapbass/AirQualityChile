@@ -2,7 +2,7 @@ name: Actualizar datos SINCA
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -48,6 +48,28 @@ jobs:
               exit(1)
           EOF
 
+      - name: Descargar datos meteo
+        run: |
+          python - <<EOF
+          import requests, json
+          
+          url = "https://redmeteo.cl/publicapi/last-data.json"
+      
+          try:
+              response = requests.get(url, timeout=10)
+              response.raise_for_status()
+              data = response.json()
+      
+              with open("datos_meteo_raw.json", "w", encoding="utf-8") as f:
+                  json.dump(data, f, ensure_ascii=False)
+      
+              print("Datos actualizados correctamente")
+      
+          except Exception as e:
+              print("Error:", e)
+              exit(1)
+          EOF
+
       - name: Commit y push
         run: |
           git config user.name "github-actions[bot]"
@@ -64,4 +86,16 @@ jobs:
             
             git push origin main
           fi
-              
+
+          git add datos_meteo_raw.json
+      
+          if git diff --cached --quiet; then
+            echo "No hay cambios"
+          else
+            git commit -m "Actualiza datos meteo"
+            
+            git pull --rebase origin main
+            
+            git push origin main
+          fi
+          
