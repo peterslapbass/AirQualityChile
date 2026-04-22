@@ -4,8 +4,6 @@ Dashboard interactivo en tiempo real para visualizar calidad del aire y condicio
 
 Integra datos del sistema **SINCA** y estaciones meteorológicas procesadas automáticamente mediante **GitHub Actions**.
 
-👉 https://peterslapbass.github.io/mapa-sinca/
-
 ---
 
 ## 🚀 Características
