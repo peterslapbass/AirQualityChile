@@ -37,11 +37,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function getPollutant(name) {
     const n = normalize(name);
-    if (n.includes("pm25") || n.includes("mp-2")) return "MP-2,5";
+  
+    // MP
+    if (n.includes("pm25") || n.includes("mp-2") || n.includes("2.5")) return "MP-2,5";
     if (n.includes("pm10") || n.includes("mp-10")) return "MP-10";
-    if (n.includes("no2")) return "NO2";
-    if (n.includes("co")) return "CO";
-    if (n.includes("o3")) return "O3";
+  
+    // NO2
+    if (n.includes("no2") || n.includes("dioxido de nitrogeno")) return "NO2";
+  
+    // O3
+    if (n.includes("o3") || n.includes("ozono")) return "O3";
+  
+    // CO (cuidado con falsos positivos)
+    if (
+      n.includes("co ") ||
+      n.includes(" co") ||
+      n.includes("monoxido de carbono")
+    ) return "CO";
+  
     return null;
   }
 
