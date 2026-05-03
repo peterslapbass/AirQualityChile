@@ -300,6 +300,7 @@ function render() {
       data: {
         labels,
         datasets: [{
+          label : pollutant, 
           data,
           borderColor: "#4fc3f7",
           fill: true,
