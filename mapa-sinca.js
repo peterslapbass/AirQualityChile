@@ -45,10 +45,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // NO2
     if (n.includes("dioxido de nitrogeno") || n.includes("no2")) return "NO2";
   
+    // SO2
+    if (n.includes("dioxido de azufre") || n.includes("so2")) return "SO2";
+  
     // O3
     if (n.includes("ozono") || n.includes("o3")) return "O3";
   
-    // CO (solo match exacto o frase completa)
+    // CO
     if (n.includes("monoxido de carbono") || n === "co") return "CO";
   
     return null;
