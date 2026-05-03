@@ -14,6 +14,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let STATIONS = {};
   let CURRENT_FILTER = "ALL";
   let chartInstance = null;
+  let SHOW_AIR = true;
+  let SHOW_WIND = true;
 
   // =============================
   // HELPERS
@@ -540,9 +542,6 @@ function animate() {
 // =============================
 // 🎛️ TOGGLES
 // =============================
-
-let SHOW_AIR = true;
-let SHOW_WIND = true;
 
 const btnAir  = document.getElementById("toggle-air");
 const btnWind = document.getElementById("toggle-wind");
