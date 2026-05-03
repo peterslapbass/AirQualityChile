@@ -543,27 +543,30 @@ function animate() {
 const btnAir  = document.getElementById("toggle-air");
 const btnWind = document.getElementById("toggle-wind");
 
-// 🔹 Toggle aire
-btnAir.addEventListener("click", () => {
-  SHOW_AIR = !SHOW_AIR;
-  btnAir.classList.toggle("active", SHOW_AIR);
+if (btnAir) {
+  btnAir.addEventListener("click", () => {
+    SHOW_AIR = !SHOW_AIR;
+    btnAir.classList.toggle("active", SHOW_AIR);
 
-  if (SHOW_AIR) map.addLayer(layer);
-  else map.removeLayer(layer);
-});
+    if (SHOW_AIR) map.addLayer(layer);
+    else map.removeLayer(layer);
+  });
+}
 
-// 🔥 ESTE ES EL TUYO — BIEN
-btnWind.addEventListener("click", () => {
-  SHOW_WIND = !SHOW_WIND;
-  btnWind.classList.toggle("active", SHOW_WIND);
+if (btnWind) {
+  btnWind.addEventListener("click", () => {
+    SHOW_WIND = !SHOW_WIND;
+    btnWind.classList.toggle("active", SHOW_WIND);
 
-  if (SHOW_WIND) {
-    map.addLayer(windLayer);
-    canvas.style.display = "block";
-  } else {
-    map.removeLayer(windLayer);
-    canvas.style.display = "none";
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
+    if (SHOW_WIND) {
+      map.addLayer(windLayer);
+      canvas.style.display = "block";
+    } else {
+      map.removeLayer(windLayer);
+      canvas.style.display = "none";
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  });
+}
 
 });
