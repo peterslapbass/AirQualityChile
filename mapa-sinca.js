@@ -274,8 +274,13 @@ document.addEventListener("DOMContentLoaded", function () {
     drawSeries(station, pollutants[0]);
   }
 
-  document.getElementById("chart-panel").classList.add("open");
-  if (window.openChartSheetOverlay) window.openChartSheetOverlay();
+  const panel = document.getElementById("chart-panel");
+  
+  if (isMobile) {
+    panel.classList.add("open");
+  } else {
+    panel.classList.add("open");
+    if (window.openChartSheetOverlay) window.openChartSheetOverlay();
   }
 
   function openMeteoPanel(station) {
@@ -462,7 +467,25 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ─────────────────────────────────────────
      INIT
   ───────────────────────────────────────── */
+  // =============================
+  // 📱 MODO MOBILE + BOTÓN FLOTANTE
+  // =============================
+  
+  const isMobile = window.innerWidth < 768;
+  
+  // Crear botón flotante
+  const fab = document.createElement("div");
+  fab.id = "mobile-fab";
+  fab.innerHTML = "☰";
+  document.body.appendChild(fab);
+  
+  // Toggle panel
+  fab.addEventListener("click", () => {
+    const panel = document.getElementById("chart-panel");
+    panel.classList.toggle("open");
+  });
 
+  
   load();
   setInterval(load, 300000);
 
