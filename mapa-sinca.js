@@ -289,7 +289,7 @@ function render() {
     `;
 
     const labels = serie.map(r => r.ts.slice(11, 16));
-    const data = serie.map(r => r.val);
+    const data = serie.map(r => r.val).filter(v => v != null && v > 0);
 
     const canvas = document.getElementById("seriesChart");
 
