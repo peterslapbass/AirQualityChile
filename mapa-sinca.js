@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // =============================
 
   async function load() {
-    const res = await fetch("datos_sinca.json");
+    const res = await fetch("datos_sinca.json?ts=" + Date.now(), {cache: "no-store"});
     const data = await res.json();
 
     STATIONS = {};
