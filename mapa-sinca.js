@@ -154,7 +154,7 @@ document.addEventListener("DOMContentLoaded", function () {
           `<span>${v[1].value} <span style="font-size:10px;color:#555">${v[1].unit}</span></span>` +
           `</div>`
         ).join("") +
-        `<div style="font-size:10px;color:#555;margin-top:6px">${s.values[0]?.[1]?.time || ""}</div>`
+        `<div style="font-size:10px;color:#555;margin-top:6px">${Object.values(s.values)[0]?.time || ""}</div>`
       );
 
       marker.on("click", () => {
@@ -428,9 +428,6 @@ map.getPanes().overlayPane.appendChild(canvas);
 canvas.style.position = "absolute";
 canvas.style.pointerEvents = "none";
 canvas.style.zIndex = 0;
-
-// 🔥 FIX
-canvas.style.display = SHOW_WIND ? "block" : "none";
 
 function resizeCanvas() {
   const size = map.getSize();
