@@ -189,9 +189,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Clic abre panel de series — pasar objeto original con values como dict
       marker.on("click", () => {
+        map.flyTo([s.lat, s.lon], 11, {
+          duration: 1
+        });
+      
         openChartPanel(STATIONS[s.name]);
       });
-    });
 
     // Ranking
     const ranking = [...processed].sort((a, b) => b.worst - a.worst);
@@ -209,9 +212,14 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".rank-item").forEach(el => {
       el.addEventListener("click", () => {
         const s = STATIONS[el.dataset.key];
-        if (s) openChartPanel(s);
-      });
-    });
+        if (!s) return;
+      
+        map.flyTo([s.lat, s.lon], 11, {
+          duration: 1
+        });
+
+  openChartPanel(s);
+});
 
     // Alertas
     const alerts = ranking.filter(s => s.worst > 100);
