@@ -118,89 +118,97 @@ document.addEventListener("DOMContentLoaded", function () {
   // RENDER
   // =============================
 
-  function render() {
-    layer.clearLayers();
+function render() {
+  layer.clearLayers();
 
-    const stations = Object.values(STATIONS);
+  const stations = Object.values(STATIONS);
 
-    let processed = stations.map(s => {
-      let values = Object.entries(s.values);
+  let processed = stations.map(s => {
 
-      if (CURRENT_FILTER !== "ALL") {
-        values = values.filter(v => v[0] === CURRENT_FILTER);
-      }
+    let entries = Object.entries(s.values);
 
-      if (!values.length) return null;
+    if (CURRENT_FILTER !== "ALL") {
+      entries = entries.filter(v => v[0] === CURRENT_FILTER);
+    }
 
-      const worst = Math.max(...values.map(v => v[1].value));
-      return { ...s, values, worst };
-    }).filter(Boolean);
+    if (!entries.length) return null;
 
-    // MAP
-    processed.forEach(s => {
-      const marker = L.circleMarker([s.lat, s.lon], {
-        radius: 8,
-        color: "#000",
-        fillColor: color(s.worst),
-        fillOpacity: 0.85
-      }).addTo(layer);
+    const worst = Math.max(...entries.map(v => v[1].value));
 
-      const entries = Object.entries(s.values)
-        .filter(([_, val]) => val && val.value != null);
-      
-      marker.bindPopup(
-        `<b>${s.name}</b>` +
-        `<div style="font-size:10px;color:#888;margin:2px 0 6px">${s.comuna} · ${s.region}</div>` +
-        `<hr>` +
-        entries.map(([key, val]) =>
-          `<div style="display:flex;justify-content:space-between;padding:2px 0">` +
-          `<span style="color:#aaa">${key}</span>` +
-          `<span>${val.value} <span style="font-size:10px;color:#555">${val.unit}</span></span>` +
-          `</div>`
-        ).join("") +
-        `<div style="font-size:10px;color:#555;margin-top:6px">${entries[0]?.[1]?.time || ""}</div>`
-      );
+    return {
+      ...s,
+      filteredEntries: entries, // 👈 IMPORTANTE
+      worst
+    };
 
-      marker.on("click", () => {
-        map.flyTo([s.lat, s.lon], 11);
-        openChartPanel(STATIONS[s.name]);
-      });
+  }).filter(Boolean);
+
+  // ================= MAP =================
+  processed.forEach(s => {
+
+    const marker = L.circleMarker([s.lat, s.lon], {
+      radius: 8,
+      color: "#000",
+      fillColor: color(s.worst),
+      fillOpacity: 0.85
+    }).addTo(layer);
+
+    const entries = s.filteredEntries.filter(([_, val]) => val && val.value != null);
+
+    marker.bindPopup(
+      `<b>${s.name}</b>` +
+      `<div style="font-size:10px;color:#888;margin:2px 0 6px">${s.comuna} · ${s.region}</div>` +
+      `<hr>` +
+      entries.map(([key, val]) =>
+        `<div style="display:flex;justify-content:space-between;padding:2px 0">` +
+        `<span style="color:#aaa">${key}</span>` +
+        `<span>${val.value} <span style="font-size:10px;color:#555">${val.unit}</span></span>` +
+        `</div>`
+      ).join("") +
+      `<div style="font-size:10px;color:#555;margin-top:6px">${entries[0]?.[1]?.time || ""}</div>`
+    );
+
+    marker.on("click", () => {
+      map.flyTo([s.lat, s.lon], 11);
+      openChartPanel(STATIONS[s.name]);
     });
 
-    // RANKING
-    const ranking = [...processed].sort((a, b) => b.worst - a.worst);
+  });
 
-    document.getElementById("ranking").innerHTML =
-      ranking.slice(0, 10).map((s, i) => `
-        <div class="rank-item" data-key="${s.name}">
-          <span class="rank-num">${i + 1}</span>
-          <span class="rank-dot" style="background:${color(s.worst)}"></span>
-          <span class="rank-name">${s.name}</span>
-          <span class="rank-val">${s.worst}</span>
+  // ================= RANKING =================
+  const ranking = [...processed].sort((a, b) => b.worst - a.worst);
+
+  document.getElementById("ranking").innerHTML =
+    ranking.slice(0, 10).map((s, i) => `
+      <div class="rank-item" data-key="${s.name}">
+        <span class="rank-num">${i + 1}</span>
+        <span class="rank-dot" style="background:${color(s.worst)}"></span>
+        <span class="rank-name">${s.name}</span>
+        <span class="rank-val">${s.worst}</span>
+      </div>
+    `).join("");
+
+  document.querySelectorAll(".rank-item").forEach(el => {
+    el.onclick = () => {
+      const s = STATIONS[el.dataset.key];
+      map.flyTo([s.lat, s.lon], 11);
+      openChartPanel(s);
+    };
+  });
+
+  // ================= ALERTAS =================
+  const alerts = ranking.filter(s => s.worst > 100);
+
+  document.getElementById("alerts").innerHTML =
+    alerts.length
+      ? alerts.map(a => `
+        <div class="alert-item">
+          <span class="alert-name">${a.name}</span>
+          <span class="alert-val">${a.worst}</span>
         </div>
-      `).join("");
-
-    document.querySelectorAll(".rank-item").forEach(el => {
-      el.onclick = () => {
-        const s = STATIONS[el.dataset.key];
-        map.flyTo([s.lat, s.lon], 11);
-        openChartPanel(s);
-      };
-    });
-
-    // ALERTAS
-    const alerts = ranking.filter(s => s.worst > 100);
-
-    document.getElementById("alerts").innerHTML =
-      alerts.length
-        ? alerts.map(a => `
-          <div class="alert-item">
-            <span class="alert-name">${a.name}</span>
-            <span class="alert-val">${a.worst}</span>
-          </div>
-        `).join("")
-        : `<div style="font-size:11px;color:#666">Sin alertas</div>`;
-  }
+      `).join("")
+      : `<div style="font-size:11px;color:#666">Sin alertas</div>`;
+}
 
   // =============================
   // PANEL SERIES
