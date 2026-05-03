@@ -144,17 +144,20 @@ document.addEventListener("DOMContentLoaded", function () {
         fillOpacity: 0.85
       }).addTo(layer);
 
+      const entries = Object.entries(s.values)
+        .filter(([_, val]) => val && val.value != null);
+      
       marker.bindPopup(
         `<b>${s.name}</b>` +
         `<div style="font-size:10px;color:#888;margin:2px 0 6px">${s.comuna} · ${s.region}</div>` +
         `<hr>` +
-        Object.entries(s.values).map(v =>
+        entries.map(([key, val]) =>
           `<div style="display:flex;justify-content:space-between;padding:2px 0">` +
-          `<span style="color:#aaa">${v[0]}</span>` +
-          `<span>${v[1].value} <span style="font-size:10px;color:#555">${v[1].unit}</span></span>` +
+          `<span style="color:#aaa">${key}</span>` +
+          `<span>${val.value} <span style="font-size:10px;color:#555">${val.unit}</span></span>` +
           `</div>`
         ).join("") +
-        `<div style="font-size:10px;color:#555;margin-top:6px">${Object.values(s.values)[0]?.time || ""}</div>`
+        `<div style="font-size:10px;color:#555;margin-top:6px">${entries[0]?.[1]?.time || ""}</div>`
       );
 
       marker.on("click", () => {
