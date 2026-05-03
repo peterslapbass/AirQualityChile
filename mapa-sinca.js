@@ -60,7 +60,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function getUnit(p) {
     if (p === "MP-2,5" || p === "MP-10") return "µg/m³";
     if (p === "NO2" || p === "O3") return "ppbv";
-    if (p === "CO") return "ppm";
+    if (p === "CO") return "ppmv";
+    if (p === "SO2") return "µg/m³");
     return "";
   }
 
