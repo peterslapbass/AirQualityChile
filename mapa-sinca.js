@@ -220,9 +220,9 @@ document.addEventListener("DOMContentLoaded", function () {
           duration: 1
         });
 
-  openChartPanel(s);
+    openChartPanel(s);
+  });
 });
-
     // Alertas
     const alerts = ranking.filter(s => s.worst > 100);
     document.getElementById("alerts").innerHTML = alerts.length
