@@ -30,7 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function getValue(r) {
     const raw = r?.tableRow?.value || r?.value || "";
-    const m = String(raw).match(/(\d+(\.\d+)?)/);
+    const cleaned = String(raw).replace(",", ".");
+    const m = cleaned.match(/(\d+(\.\d+)?)/);
     return m ? Number(m[0]) : null;
   }
 
