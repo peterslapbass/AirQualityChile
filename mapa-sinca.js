@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  console.log("🔥 MAPA SINCA - FINAL STABLE");
+  console.log("🔥 MAPA SINCA - FULL VERSION OK");
 
   const map = L.map('map').setView([-33.45, -70.66], 5);
 
@@ -9,9 +9,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }).addTo(map);
 
   let layer = L.layerGroup().addTo(map);
+  let windLayer = L.layerGroup().addTo(map);
 
   let STATIONS = {};
   let CURRENT_FILTER = "ALL";
+
+  // =============================
+  // HELPERS
+  // =============================
 
   function normalize(t) {
     if (!t) return "";
@@ -59,6 +64,10 @@ document.addEventListener("DOMContentLoaded", function () {
     })).filter(r => r.ts && typeof r.val === "number");
   }
 
+  // =============================
+  // LOAD DATA
+  // =============================
+
   async function load() {
     const res = await fetch("datos_sinca.json");
     const data = await res.json();
@@ -67,7 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     data.forEach(station => {
       const { nombre, latitud, longitud, region, comuna, realtime } = station;
-      if (!nombre) return;
+      if (!nombre || !latitud) return;
 
       STATIONS[nombre] = {
         name: nombre,
@@ -81,22 +90,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
       (realtime || []).forEach(r => {
         const value = getValue(r);
-        const pollutant = getPollutant(r.name || "");
+        const pollutant = getPollutant(r.name || r.parameter || "");
         if (!pollutant || value === null) return;
 
         STATIONS[nombre].values[pollutant] = {
           value,
+          time: r.datetime || "",
           status: r.tableRow?.status || "nd",
           unit: getUnit(pollutant)
         };
 
         const serie = parseSeries(r);
-        if (serie.length) STATIONS[nombre].series[pollutant] = serie;
+        if (serie.length) {
+          STATIONS[nombre].series[pollutant] = serie;
+        }
       });
     });
 
     render();
   }
+
+  // =============================
+  // RENDER
+  // =============================
 
   function render() {
     layer.clearLayers();
@@ -105,15 +121,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let processed = stations.map(s => {
       let values = Object.entries(s.values);
+
       if (CURRENT_FILTER !== "ALL") {
         values = values.filter(v => v[0] === CURRENT_FILTER);
       }
+
       if (!values.length) return null;
 
       const worst = Math.max(...values.map(v => v[1].value));
       return { ...s, values, worst };
     }).filter(Boolean);
 
+    // MAP
     processed.forEach(s => {
       const marker = L.circleMarker([s.lat, s.lon], {
         radius: 8,
@@ -122,18 +141,27 @@ document.addEventListener("DOMContentLoaded", function () {
         fillOpacity: 0.85
       }).addTo(layer);
 
+      marker.bindPopup(`
+        <b>${s.name}</b>
+        <div style="font-size:10px;color:#888">${s.comuna} · ${s.region}</div>
+      `);
+
       marker.on("click", () => {
         map.flyTo([s.lat, s.lon], 11);
         openChartPanel(STATIONS[s.name]);
       });
     });
 
+    // RANKING
     const ranking = [...processed].sort((a, b) => b.worst - a.worst);
 
     document.getElementById("ranking").innerHTML =
       ranking.slice(0, 10).map((s, i) => `
         <div class="rank-item" data-key="${s.name}">
-          <span>${i + 1}</span> ${s.name} (${s.worst})
+          <span class="rank-num">${i + 1}</span>
+          <span class="rank-dot" style="background:${color(s.worst)}"></span>
+          <span class="rank-name">${s.name}</span>
+          <span class="rank-val">${s.worst}</span>
         </div>
       `).join("");
 
@@ -144,21 +172,53 @@ document.addEventListener("DOMContentLoaded", function () {
         openChartPanel(s);
       };
     });
+
+    // ALERTAS
+    const alerts = ranking.filter(s => s.worst > 100);
+
+    document.getElementById("alerts").innerHTML =
+      alerts.length
+        ? alerts.map(a => `
+          <div class="alert-item">
+            <span class="alert-name">${a.name}</span>
+            <span class="alert-val">${a.worst}</span>
+          </div>
+        `).join("")
+        : `<div style="font-size:11px;color:#666">Sin alertas</div>`;
   }
 
   // =============================
-  // 📊 PANEL
+  // PANEL SERIES
   // =============================
 
   let chartInstance = null;
 
   function openChartPanel(station) {
+
     document.getElementById("chart-station-name").textContent = station.name;
+    document.getElementById("chart-region").textContent =
+      [station.comuna, station.region].join(" · ");
 
     const pollutants = Object.keys(station.series);
-    const first = pollutants[0];
 
-    drawSeries(station, first);
+    const pills = document.getElementById("chart-pills");
+    pills.innerHTML = "";
+
+    pollutants.forEach((p, i) => {
+      const btn = document.createElement("button");
+      btn.className = "cpill" + (i === 0 ? " active" : "");
+      btn.textContent = p;
+
+      btn.onclick = () => {
+        document.querySelectorAll(".cpill").forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        drawSeries(station, p);
+      };
+
+      pills.appendChild(btn);
+    });
+
+    if (pollutants.length) drawSeries(station, pollutants[0]);
 
     document.getElementById("chart-panel").classList.add("open");
 
@@ -168,13 +228,34 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function drawSeries(station, pollutant) {
-    const serie = station.series[pollutant] || [];
-    const canvas = document.getElementById("seriesChart");
 
-    if (!serie.length) return;
+    const serie = station.series[pollutant] || [];
+    const snap = station.values[pollutant] || {};
+    const unit = getUnit(pollutant);
+
+    const vals = serie.map(r => r.val);
+    const max = Math.max(...vals);
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+
+    document.getElementById("chart-stats").innerHTML = `
+      <div class="cstat">
+        <div class="cstat-lbl">Actual</div>
+        <div class="cstat-val">${snap.value ?? "—"} <span class="cstat-unit">${unit}</span></div>
+      </div>
+      <div class="cstat">
+        <div class="cstat-lbl">Máx</div>
+        <div class="cstat-val">${max.toFixed(0)}</div>
+      </div>
+      <div class="cstat">
+        <div class="cstat-lbl">Prom</div>
+        <div class="cstat-val">${avg.toFixed(0)}</div>
+      </div>
+    `;
 
     const labels = serie.map(r => r.ts.slice(11, 16));
     const data = serie.map(r => r.val);
+
+    const canvas = document.getElementById("seriesChart");
 
     if (chartInstance) chartInstance.destroy();
 
@@ -182,20 +263,40 @@ document.addEventListener("DOMContentLoaded", function () {
       type: "line",
       data: {
         labels,
-        datasets: [{ data }]
+        datasets: [{
+          data,
+          borderColor: "#4fc3f7",
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
       }
     });
   }
+
+  // =============================
+  // CLOSE PANEL
+  // =============================
 
   document.getElementById("chart-close").addEventListener("click", () => {
     document.getElementById("chart-panel").classList.remove("open");
     if (chartInstance) chartInstance.destroy();
   });
 
+  // =============================
+  // FILTER
+  // =============================
+
   document.getElementById("filter").addEventListener("change", e => {
     CURRENT_FILTER = e.target.value;
     render();
   });
+
+  // =============================
+  // INIT
+  // =============================
 
   load();
   setInterval(load, 300000);
