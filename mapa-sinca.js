@@ -196,6 +196,8 @@ document.addEventListener("DOMContentLoaded", function () {
         openChartPanel(STATIONS[s.name]);
       });
 
+    }); // ✅ ESTE ERA EL QUE FALTABA
+    
     // Ranking
     const ranking = [...processed].sort((a, b) => b.worst - a.worst);
     document.getElementById("ranking").innerHTML =
