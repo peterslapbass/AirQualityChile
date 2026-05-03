@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-  console.log("🔥 MAPA SINCA - FULL VERSION OK");
+  console.log("🔥 MAPA SINCA - FULL FIXED");
 
   const map = L.map('map').setView([-33.45, -70.66], 5);
 
@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let STATIONS = {};
   let CURRENT_FILTER = "ALL";
+  let chartInstance = null;
 
   // =============================
   // HELPERS
@@ -141,10 +142,18 @@ document.addEventListener("DOMContentLoaded", function () {
         fillOpacity: 0.85
       }).addTo(layer);
 
-      marker.bindPopup(`
-        <b>${s.name}</b>
-        <div style="font-size:10px;color:#888">${s.comuna} · ${s.region}</div>
-      `);
+      marker.bindPopup(
+        `<b>${s.name}</b>` +
+        `<div style="font-size:10px;color:#888;margin:2px 0 6px">${s.comuna} · ${s.region}</div>` +
+        `<hr>` +
+        Object.entries(s.values).map(v =>
+          `<div style="display:flex;justify-content:space-between;padding:2px 0">` +
+          `<span style="color:#aaa">${v[0]}</span>` +
+          `<span>${v[1].value} <span style="font-size:10px;color:#555">${v[1].unit}</span></span>` +
+          `</div>`
+        ).join("") +
+        `<div style="font-size:10px;color:#555;margin-top:6px">${s.values[0]?.[1]?.time || ""}</div>`
+      );
 
       marker.on("click", () => {
         map.flyTo([s.lat, s.lon], 11);
@@ -191,16 +200,13 @@ document.addEventListener("DOMContentLoaded", function () {
   // PANEL SERIES
   // =============================
 
-  let chartInstance = null;
-
   function openChartPanel(station) {
 
     document.getElementById("chart-station-name").textContent = station.name;
     document.getElementById("chart-region").textContent =
-      [station.comuna, station.region].join(" · ");
+      [station.comuna, station.region].filter(Boolean).join(" · ");
 
     const pollutants = Object.keys(station.series);
-
     const pills = document.getElementById("chart-pills");
     pills.innerHTML = "";
 
@@ -233,22 +239,25 @@ document.addEventListener("DOMContentLoaded", function () {
     const snap = station.values[pollutant] || {};
     const unit = getUnit(pollutant);
 
-    const vals = serie.map(r => r.val);
-    const max = Math.max(...vals);
-    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const vals = serie.map(r => r.val).filter(v => v != null);
+
+    const max = vals.length ? Math.max(...vals) : null;
+    const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+
+    const fmt = v => v != null ? v.toFixed(1) : "—";
 
     document.getElementById("chart-stats").innerHTML = `
       <div class="cstat">
         <div class="cstat-lbl">Actual</div>
-        <div class="cstat-val">${snap.value ?? "—"} <span class="cstat-unit">${unit}</span></div>
+        <div class="cstat-val">${fmt(snap.value)} <span class="cstat-unit">${unit}</span></div>
       </div>
       <div class="cstat">
         <div class="cstat-lbl">Máx</div>
-        <div class="cstat-val">${max.toFixed(0)}</div>
+        <div class="cstat-val">${fmt(max)}</div>
       </div>
       <div class="cstat">
         <div class="cstat-lbl">Prom</div>
-        <div class="cstat-val">${avg.toFixed(0)}</div>
+        <div class="cstat-val">${fmt(avg)}</div>
       </div>
     `;
 
@@ -266,7 +275,8 @@ document.addEventListener("DOMContentLoaded", function () {
         datasets: [{
           data,
           borderColor: "#4fc3f7",
-          fill: true
+          fill: true,
+          tension: 0.3
         }]
       },
       options: {
@@ -283,6 +293,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("chart-close").addEventListener("click", () => {
     document.getElementById("chart-panel").classList.remove("open");
     if (chartInstance) chartInstance.destroy();
+    if (window.closeChartPanel) window.closeChartPanel();
   });
 
   // =============================
@@ -300,5 +311,263 @@ document.addEventListener("DOMContentLoaded", function () {
 
   load();
   setInterval(load, 300000);
+
+// =============================
+// 🌬️ CAPA DE VIENTO (FLECHAS)
+// =============================
+
+function getWindColor(speed) {
+  if (speed < 2) return "gray";
+  if (speed < 5) return "#4FC3F7";
+  return "#EF5350";
+}
+
+function createWindIcon(speed, dir) {
+  const correctedDir = dir + 180;
+
+  return L.divIcon({
+    html: `<div style="
+      transform: rotate(${correctedDir}deg);
+      color: ${getWindColor(speed)};
+      font-size: ${Math.max(12, speed * 4)}px;
+    ">➤</div>`,
+    className: "",
+    iconSize: [20, 20]
+  });
+}
+
+function openMeteoPanel(station) {
+
+  document.getElementById("chart-station-name").textContent =
+    station.name || "Estación meteorológica";
+
+  document.getElementById("chart-region").textContent =
+    "Datos meteorológicos";
+
+  document.getElementById("chart-pills").innerHTML =
+    `<span class="cpill active">Meteo</span>`;
+
+  document.getElementById("chart-stats").innerHTML = `
+    <div class="cstat">
+      <div class="cstat-lbl">Viento</div>
+      <div class="cstat-val">${station.wind_speed ?? "—"}<span class="cstat-unit"> m/s</span></div>
+    </div>
+    <div class="cstat">
+      <div class="cstat-lbl">Dirección</div>
+      <div class="cstat-val">${station.wind_dir ?? "—"}°</div>
+    </div>
+    <div class="cstat">
+      <div class="cstat-lbl">Temperatura</div>
+      <div class="cstat-val">${station.temp ?? "—"}<span class="cstat-unit"> °C</span></div>
+    </div>
+    <div class="cstat">
+      <div class="cstat-lbl">Humedad</div>
+      <div class="cstat-val">${station.humidity ?? "—"}<span class="cstat-unit"> %</span></div>
+    </div>
+  `;
+
+  document.getElementById("seriesChart").style.display = "none";
+
+  const empty = document.getElementById("chart-empty");
+  empty.style.display = "block";
+  empty.textContent = "Datos meteorológicos en tiempo real";
+
+  document.getElementById("chart-panel").classList.add("open");
+
+  if (window.openChartSheetOverlay) {
+    window.openChartSheetOverlay();
+  }
+}
+
+function loadWindData() {
+  fetch("datos_meteo.json?" + Date.now())
+    .then(r => r.json())
+    .then(data => {
+
+      windLayer.clearLayers();
+
+      data.forEach(s => {
+        if (!s.lat || !s.lon) return;
+
+        const marker = L.marker([s.lat, s.lon], {
+          icon: createWindIcon(s.wind_speed || 0, s.wind_dir || 0)
+        });
+
+        marker.bindPopup(`
+          <b>${s.name || "Estación"}</b><br>
+          Viento: ${s.wind_speed ?? "—"} m/s<br>
+          Dir: ${s.wind_dir ?? "—"}°
+        `);
+
+        marker.on("click", () => {
+          openMeteoPanel(s);
+        });
+
+        windLayer.addLayer(marker);
+      });
+
+    })
+    .catch(err => console.error("❌ viento:", err));
+}
+
+loadWindData();
+setInterval(loadWindData, 300000);
+
+// =============================
+// 🌊 WIND FIELD ANIMADO
+// =============================
+
+const canvas = document.createElement("canvas");
+  
+const ctx = canvas.getContext("2d");
+
+map.getPanes().overlayPane.appendChild(canvas);
+
+canvas.style.position = "absolute";
+canvas.style.pointerEvents = "none";
+canvas.style.zIndex = 0;
+
+// 🔥 FIX
+canvas.style.display = SHOW_WIND ? "block" : "none";
+
+function resizeCanvas() {
+  const size = map.getSize();
+  canvas.width = size.x;
+  canvas.height = size.y;
+}
+
+function repositionCanvas() {
+  const topLeft = map.containerPointToLayerPoint([0, 0]);
+  L.DomUtil.setPosition(canvas, topLeft);
+}
+
+map.on("move", () => {
+  repositionCanvas();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+});
+
+map.on("resize", resizeCanvas);
+
+resizeCanvas();
+repositionCanvas();
+
+let windField = null;
+let particles = [];
+
+fetch("wind_field.json")
+  .then(r => r.json())
+  .then(data => {
+    windField = data;
+    initParticles();
+  });
+
+function getWindAt(lat, lon) {
+  if (!windField) return { u: 0, v: 0 };
+
+  const { min_lat, max_lat, min_lon, max_lon } = windField.bounds;
+  const size = windField.grid_size;
+
+  const x = (lon - min_lon) / (max_lon - min_lon) * (size - 1);
+  const y = (lat - min_lat) / (max_lat - min_lat) * (size - 1);
+
+  const i = Math.floor(x);
+  const j = Math.floor(y);
+
+  if (i < 0 || j < 0 || i >= size || j >= size) return { u: 0, v: 0 };
+
+  return {
+    u: windField.u[j][i],
+    v: windField.v[j][i]
+  };
+}
+
+function initParticles() {
+  const b = windField.bounds;
+
+  particles = [];
+
+  for (let i = 0; i < 400; i++) {
+    particles.push({
+      lat: b.min_lat + Math.random() * (b.max_lat - b.min_lat),
+      lon: b.min_lon + Math.random() * (b.max_lon - b.min_lon),
+      age: Math.random() * 100
+    });
+  }
+
+  animate();
+}
+
+function resetParticle(p) {
+  const b = windField.bounds;
+
+  p.lat = b.min_lat + Math.random() * (b.max_lat - b.min_lat);
+  p.lon = b.min_lon + Math.random() * (b.max_lon - b.min_lon);
+  p.age = 0;
+}
+
+function animate() {
+  ctx.fillStyle = "rgba(255,255,255,0.02)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  particles.forEach(p => {
+
+    const wind = getWindAt(p.lat, p.lon);
+    const speed = Math.sqrt(wind.u**2 + wind.v**2);
+
+    if (speed < 0.1 || p.age > 100) {
+      resetParticle(p);
+      return;
+    }
+
+    const prev = map.latLngToContainerPoint([p.lat, p.lon]);
+
+    p.lat += wind.v * 0.01;
+    p.lon += wind.u * 0.01;
+    p.age++;
+
+    const next = map.latLngToContainerPoint([p.lat, p.lon]);
+
+    ctx.beginPath();
+    ctx.moveTo(prev.x, prev.y);
+    ctx.lineTo(next.x, next.y);
+    ctx.strokeStyle = "rgba(80,150,255,0.7)";
+    ctx.stroke();
+  });
+
+  requestAnimationFrame(animate);
+}
+
+// =============================
+// 🎛️ TOGGLES
+// =============================
+
+let SHOW_AIR = true;
+let SHOW_WIND = true;
+
+const btnAir  = document.getElementById("toggle-air");
+const btnWind = document.getElementById("toggle-wind");
+
+// 🔹 Toggle aire
+btnAir.addEventListener("click", () => {
+  SHOW_AIR = !SHOW_AIR;
+  btnAir.classList.toggle("active", SHOW_AIR);
+
+  if (SHOW_AIR) map.addLayer(layer);
+  else map.removeLayer(layer);
+});
+
+// 🔥 ESTE ES EL TUYO — BIEN
+btnWind.addEventListener("click", () => {
+  SHOW_WIND = !SHOW_WIND;
+  btnWind.classList.toggle("active", SHOW_WIND);
+
+  if (SHOW_WIND) {
+    map.addLayer(windLayer);
+    canvas.style.display = "block";
+  } else {
+    map.removeLayer(windLayer);
+    canvas.style.display = "none";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 
 });
