@@ -118,6 +118,10 @@ FRONTEND (ES modules, sin bundler)
 - **CI/CD:** GitHub Actions (c/15 min)
 - **PWA:** Service Worker + Manifest
 
+## Licencia
+
+MIT © 2026 Pedro Rubio. Ver [LICENSE](LICENSE).
+
 ## Autor
 
 Proyecto de visualización ambiental basado en datos SINCA, RedMeteo y RETC de Chile, desarrollado por Pedro Rubio.
