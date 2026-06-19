@@ -90,7 +90,7 @@ export function icaDash(ica) {
 }
 
 export function calcTrend(values) {
-  const valid = values.filter(v => v != null);
+  const valid = values.filter(v => v != null && v > 0);
   if (valid.length < 3) return "stable";
   const recent = valid.slice(-3);
   const prev = valid.slice(-6, -3);
@@ -105,7 +105,7 @@ export function calcTrend(values) {
 
 export function calcPrediction(serie, steps) {
   steps = steps || 3;
-  const vals = serie.map(r => r.val).filter(v => v != null);
+  const vals = serie.map(r => r.val).filter(v => v != null && v > 0);
   if (vals.length < 3) return [];
   // simple moving average of last 4 points
   const window = vals.slice(-4);

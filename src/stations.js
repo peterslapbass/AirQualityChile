@@ -57,7 +57,7 @@ export function createStations(ctx) {
       (realtime || []).forEach(r => {
         const value = getValue(r);
         const pollutant = getPollutant(r.name || r.parameter || "");
-        if (!pollutant || value === null) return;
+        if (!pollutant || value === null || value <= 0) return;
 
         const ica = calcICA(pollutant, value);
 
