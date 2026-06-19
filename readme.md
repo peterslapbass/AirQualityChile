@@ -37,6 +37,7 @@ https://peterslapbass.github.io/AirQualityChile/
 - Tooltip con detalles al hover
 - Alertas configurables por umbral ICA
 - Detección de datos desactualizados (>1h)
+- Filtro por nombre, región o comuna con autocomplete
 
 ### Panel de series
 - Chart.js con línea horaria
@@ -57,8 +58,13 @@ https://peterslapbass.github.io/AirQualityChile/
 ### Accesibilidad
 - aria-label, aria-pressed, aria-hidden en todos los elementos interactivos
 - Navegación por teclado (Enter/Space) en ranking
-- Modo daltónico (patrones dashArray en marcadores)
-- Modal informativo con explicación de cálculos
+- Modo daltónico: patrones en borde + opacidad variable por categoría ICA
+  - Buena → sólido · 80%
+  - Regular → `- - -` · 65%
+  - Mala → `• •` · 50%
+  - Muy mala → `-•-•` · 35%
+  - Crítica → `--••--••` · 20%
+- Modal informativo con explicación de cálculos y accesibilidad
 
 ---
 

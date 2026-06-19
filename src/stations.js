@@ -100,9 +100,10 @@ export function createStations(ctx) {
     _dashMarkers.forEach(({ marker, ica }) => {
       if (ctx.COLORBLIND && ica != null) {
         const dash = icaDash(ica);
-        marker.setStyle({ dashArray: dash || "" });
+        const opacity = ica <= 50 ? 0.8 : ica <= 100 ? 0.65 : ica <= 150 ? 0.5 : ica <= 200 ? 0.35 : 0.2;
+        marker.setStyle({ dashArray: dash || "", weight: 3, fillOpacity: opacity });
       } else {
-        marker.setStyle({ dashArray: "" });
+        marker.setStyle({ dashArray: "", weight: 1.5, fillOpacity: 0.8 });
       }
     });
   }
