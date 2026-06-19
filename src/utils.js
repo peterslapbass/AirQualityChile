@@ -182,6 +182,40 @@ const RECOMMENDATIONS = {
   ]
 };
 
+export function getColorblindIcon(ica, size) {
+  const c = icaColor(ica);
+  const half = size / 2;
+
+  let path;
+  if (ica <= 50) {
+    path = `<circle cx="${half}" cy="${half}" r="${half * 0.75}" fill="${c}" stroke="#fff" stroke-width="1.5"/>`;
+  } else if (ica <= 100) {
+    const s = size * 0.7, o = (size - s) / 2;
+    path = `<rect x="${o}" y="${o}" width="${s}" height="${s}" rx="2" fill="${c}" stroke="#fff" stroke-width="1.5"/>`;
+  } else if (ica <= 150) {
+    const t = half * 0.75;
+    path = `<polygon points="${half},${half - t} ${half - t},${half + t * 0.6} ${half + t},${half + t * 0.6}" fill="${c}" stroke="#fff" stroke-width="1.5"/>`;
+  } else if (ica <= 200) {
+    const d = half * 0.7;
+    path = `<polygon points="${half},${half - d} ${half + d},${half} ${half},${half + d} ${half - d},${half}" fill="${c}" stroke="#fff" stroke-width="1.5"/>`;
+  } else {
+    const r = half * 0.65;
+    const pts = [];
+    for (let i = 0; i < 5; i++) {
+      const a = (i * 72 - 90) * Math.PI / 180;
+      pts.push(`${half + r * Math.cos(a)},${half + r * Math.sin(a)}`);
+    }
+    path = `<polygon points="${pts.join(" ")}" fill="${c}" stroke="#fff" stroke-width="1.5"/>`;
+  }
+
+  return L.divIcon({
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${path}</svg>`,
+    className: "",
+    iconSize: [size, size],
+    iconAnchor: [half, half]
+  });
+}
+
 export function dominantPollutant(station) {
   const entries = Object.entries(station.values || {});
   if (!entries.length) return null;

@@ -1,4 +1,4 @@
-import { getValue, getPollutant, getUnit, color, parseSeries, calcICA, icaColor, icaLabel, icaDash, calcTrend, calcPrediction, dominantPollutant, healthRecommendation } from './utils.js';
+import { getValue, getPollutant, getUnit, color, parseSeries, calcICA, icaColor, icaLabel, icaDash, calcTrend, calcPrediction, dominantPollutant, healthRecommendation, getColorblindIcon } from './utils.js';
 
 export function createStations(ctx) {
   let chartInstance = null;
@@ -97,15 +97,7 @@ export function createStations(ctx) {
   }
 
   function updateColorblind() {
-    _dashMarkers.forEach(({ marker, ica }) => {
-      if (ctx.COLORBLIND && ica != null) {
-        const dash = icaDash(ica);
-        const opacity = ica <= 50 ? 0.8 : ica <= 100 ? 0.65 : ica <= 150 ? 0.5 : ica <= 200 ? 0.35 : 0.2;
-        marker.setStyle({ dashArray: dash || "", weight: 3, fillOpacity: opacity });
-      } else {
-        marker.setStyle({ dashArray: "", weight: 1.5, fillOpacity: 0.8 });
-      }
-    });
+    render();
   }
 
   function render() {
@@ -144,18 +136,21 @@ export function createStations(ctx) {
       const radius = Math.min(16, Math.max(6, 6 + (s.worst / 150) * 10));
       const icas = Object.values(s.values).map(v => v.ica).filter(Boolean);
       const maxIca = icas.length ? Math.max(...icas) : null;
-      const opts = {
-        radius,
-        color: "#fff",
-        weight: 1.5,
-        fillColor: color(s.worst),
-        fillOpacity: 0.8
-      };
+      const size = Math.min(32, Math.max(12, 12 + (s.worst / 150) * 20));
+
+      let marker;
       if (ctx.COLORBLIND && maxIca != null) {
-        const dash = icaDash(maxIca);
-        if (dash) opts.dashArray = dash;
+        const icon = getColorblindIcon(maxIca, size);
+        marker = L.marker([s.lat, s.lon], { icon }).addTo(ctx.layer);
+      } else {
+        marker = L.circleMarker([s.lat, s.lon], {
+          radius,
+          color: "#fff",
+          weight: 1.5,
+          fillColor: color(s.worst),
+          fillOpacity: 0.8
+        }).addTo(ctx.layer);
       }
-      const marker = L.circleMarker([s.lat, s.lon], opts).addTo(ctx.layer);
 
       const entries = s.filteredEntries.filter(([_, val]) => val && val.value != null);
 

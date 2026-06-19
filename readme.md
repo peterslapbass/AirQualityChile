@@ -58,12 +58,12 @@ https://peterslapbass.github.io/AirQualityChile/
 ### Accesibilidad
 - aria-label, aria-pressed, aria-hidden en todos los elementos interactivos
 - Navegación por teclado (Enter/Space) en ranking
-- Modo daltónico: patrones en borde + opacidad variable por categoría ICA
-  - Buena → sólido · 80%
-  - Regular → `- - -` · 65%
-  - Mala → `• •` · 50%
-  - Muy mala → `-•-•` · 35%
-  - Crítica → `--••--••` · 20%
+- Modo daltónico: formas geométricas SVG por categoría ICA
+  - Buena → ● círculo
+  - Regular → ▣ cuadrado
+  - Mala → ▲ triángulo
+  - Muy mala → ◆ diamante
+  - Crítica → ⬠ pentágono
 - Modal informativo con explicación de cálculos y accesibilidad
 
 ---
