@@ -66,6 +66,7 @@ export function createSources(ctx) {
       });
     } catch (err) {
       console.error("fuentes:", err);
+      if (window.showToast) window.showToast("Error al cargar fuentes RETC");
     }
   }
 

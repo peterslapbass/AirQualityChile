@@ -81,6 +81,8 @@ export function createWind(ctx) {
   }
 
   function loadWindData() {
+    if (ctx._loadingWind) return;
+    ctx._loadingWind = true;
     fetch("datos_meteo.json", {cache: "no-cache"})
       .then(r => r.ok ? r.json() : null)
       .then(data => {
@@ -108,7 +110,11 @@ export function createWind(ctx) {
           ctx.windLayer.addLayer(marker);
         });
       })
-      .catch(err => console.error("viento:", err));
+      .catch(err => {
+        console.error("viento:", err);
+        if (window.showToast) window.showToast("Error al cargar datos meteorológicos");
+      })
+      .then(() => { ctx._loadingWind = false; });
   }
 
   function initCanvas() {
@@ -182,6 +188,10 @@ export function createWind(ctx) {
       .then(data => {
         windField = data;
         initParticles();
+      })
+      .catch(err => {
+        console.error("wind_field:", err);
+        if (window.showToast) window.showToast("Error al cargar campo de viento");
       });
   }
 
@@ -189,7 +199,8 @@ export function createWind(ctx) {
     const b = windField.bounds;
     particles = [];
 
-    for (let i = 0; i < 400; i++) {
+    const count = window.innerWidth <= 680 ? 150 : 400;
+    for (let i = 0; i < count; i++) {
       particles.push({
         lat: b.min_lat + Math.random() * (b.max_lat - b.min_lat),
         lon: b.min_lon + Math.random() * (b.max_lon - b.min_lon),

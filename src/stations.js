@@ -34,7 +34,10 @@ export function createStations(ctx) {
   }
 
   async function load() {
-    const res = await fetch("datos_sinca.json", {cache: "no-cache"});
+    if (ctx._loadingStations) return;
+    ctx._loadingStations = true;
+    try {
+      const res = await fetch("datos_sinca.json", {cache: "no-cache"});
     if (!res.ok) throw new Error("fetch failed");
     const data = await res.json();
 
@@ -80,6 +83,11 @@ export function createStations(ctx) {
     checkStaleness();
     fillRegionList();
     render();
+    ctx._loadingStations = false;
+    } catch (e) {
+      ctx._loadingStations = false;
+      throw e;
+    }
   }
 
   function fillRegionList() {
@@ -437,9 +445,13 @@ export function createStations(ctx) {
 
   const searchInput = document.getElementById("search");
   if (searchInput) {
+    let searchTimer;
     searchInput.addEventListener("input", e => {
-      ctx.SEARCH_TERM = e.target.value;
-      render();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        ctx.SEARCH_TERM = e.target.value;
+        render();
+      }, 150);
     });
   }
 

@@ -1,4 +1,4 @@
-const CACHE = "aire-chile-v1";
+const CACHE = "aire-chile-" + Date.now();
 const PRECACHE = [
   "/",
   "/index.html",
