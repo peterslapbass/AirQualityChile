@@ -38,52 +38,52 @@ export function createStations(ctx) {
     ctx._loadingStations = true;
     try {
       const res = await fetch("datos_sinca.json", {cache: "no-cache"});
-    if (!res.ok) throw new Error("fetch failed");
-    const data = await res.json();
+      if (!res.ok) throw new Error("fetch failed");
+      const data = await res.json();
 
-    ctx.STATIONS = {};
-    _markers.clear();
+      ctx.STATIONS = {};
+      _markers.clear();
 
-    data.forEach(station => {
-      const { nombre, latitud, longitud, region, comuna, realtime } = station;
-      if (!nombre || !latitud) return;
+      data.forEach(station => {
+        const { nombre, latitud, longitud, region, comuna, realtime } = station;
+        if (!nombre || !latitud) return;
 
-      ctx.STATIONS[nombre] = {
-        name: nombre,
-        lat: latitud,
-        lon: longitud,
-        region: region || "",
-        comuna: comuna || "",
-        values: {},
-        series: {}
-      };
-
-      (realtime || []).forEach(r => {
-        const value = getValue(r);
-        const pollutant = getPollutant(r.name || r.parameter || "");
-        if (!pollutant || value === null || value <= 0) return;
-
-        const ica = calcICA(pollutant, value);
-
-        ctx.STATIONS[nombre].values[pollutant] = {
-          value,
-          ica,
-          time: r.datetime || "",
-          status: r.tableRow?.status || "nd",
-          unit: getUnit(pollutant)
+        ctx.STATIONS[nombre] = {
+          name: nombre,
+          lat: latitud,
+          lon: longitud,
+          region: region || "",
+          comuna: comuna || "",
+          values: {},
+          series: {}
         };
 
-        const serie = parseSeries(r);
-        if (serie.length) {
-          ctx.STATIONS[nombre].series[pollutant] = serie;
-        }
-      });
-    });
+        (realtime || []).forEach(r => {
+          const value = getValue(r);
+          const pollutant = getPollutant(r.name || r.parameter || "");
+          if (!pollutant || value === null || value <= 0) return;
 
-    checkStaleness();
-    fillRegionList();
-    render();
-    ctx._loadingStations = false;
+          const ica = calcICA(pollutant, value);
+
+          ctx.STATIONS[nombre].values[pollutant] = {
+            value,
+            ica,
+            time: r.datetime || "",
+            status: r.tableRow?.status || "nd",
+            unit: getUnit(pollutant)
+          };
+
+          const serie = parseSeries(r);
+          if (serie.length) {
+            ctx.STATIONS[nombre].series[pollutant] = serie;
+          }
+        });
+      });
+
+      checkStaleness();
+      fillRegionList();
+      render();
+      ctx._loadingStations = false;
     } catch (e) {
       ctx._loadingStations = false;
       throw e;

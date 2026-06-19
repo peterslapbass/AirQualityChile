@@ -47,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const sources = createSources(ctx);
   const toggles = createToggles(ctx, wind);
 
-  ctx._loadingStations = true;
   stations.load().then(() => {
     if (loading) loading.classList.add("hidden");
     showToast("Datos actualizados");
