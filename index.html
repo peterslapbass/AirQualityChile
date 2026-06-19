@@ -196,6 +196,9 @@ body {
   transition: transform 0.3s var(--ease);
   z-index: 500;
   box-shadow: -4px 0 24px rgba(0,0,0,0.3);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--faint) transparent;
 }
 #chart-panel.open { transform: translateX(0); }
 
@@ -410,6 +413,10 @@ body {
     z-index: 600;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--faint) transparent;
   }
   #chart-panel.open { transform: translateY(0); }
 
