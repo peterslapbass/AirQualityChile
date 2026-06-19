@@ -582,7 +582,8 @@ body {
       <div id="sidebar-title">Aire Chile <span style="font-size:11px;color:var(--muted);font-weight:400">· SINCA + RedMeteo</span></div>
       <button id="info-btn" aria-label="Cómo se calculan los datos" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s var(--ease);flex-shrink:0">ⓘ</button>
     </div>
-    <input id="search" type="search" placeholder="Buscar estación..." aria-label="Buscar estación por nombre o comuna" style="width:100%;margin-top:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color 0.2s var(--ease);-webkit-appearance:none">
+    <input id="search" type="search" placeholder="Buscar estación / región / comuna..." aria-label="Buscar estación por nombre, región o comuna" list="region-list" style="width:100%;margin-top:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color 0.2s var(--ease);-webkit-appearance:none">
+    <datalist id="region-list"></datalist>
     <style>#search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }</style>
     <select id="filter" aria-label="Filtrar por contaminante" style="margin-top:6px">
       <option value="ALL">Todos los contaminantes</option>

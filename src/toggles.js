@@ -42,7 +42,7 @@ export function createToggles(ctx, wind) {
       ctx.COLORBLIND = !ctx.COLORBLIND;
       btnCblind.classList.toggle("active", ctx.COLORBLIND);
       btnCblind.setAttribute("aria-pressed", ctx.COLORBLIND);
-      if (ctx._stationsRender) ctx._stationsRender();
+      if (ctx._updateColorblind) ctx._updateColorblind();
     });
   }
 }

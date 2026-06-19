@@ -3,6 +3,7 @@ import { getValue, getPollutant, getUnit, color, parseSeries, calcICA, icaColor,
 export function createStations(ctx) {
   let chartInstance = null;
   const _markers = new Map();
+  const _dashMarkers = [];
 
   function checkStaleness() {
     const warn = document.getElementById("stale-warning");
@@ -77,12 +78,39 @@ export function createStations(ctx) {
     });
 
     checkStaleness();
+    fillRegionList();
     render();
+  }
+
+  function fillRegionList() {
+    const datalist = document.getElementById("region-list");
+    if (!datalist) return;
+    const seen = new Set();
+    datalist.innerHTML = "";
+    Object.values(ctx.STATIONS).forEach(s => {
+      [s.region, s.comuna].forEach(v => {
+        if (v && !seen.has(v)) { seen.add(v);
+          const opt = document.createElement("option");
+          opt.value = v; datalist.appendChild(opt); }
+      });
+    });
+  }
+
+  function updateColorblind() {
+    _dashMarkers.forEach(({ marker, ica }) => {
+      if (ctx.COLORBLIND && ica != null) {
+        const dash = icaDash(ica);
+        marker.setStyle({ dashArray: dash || "" });
+      } else {
+        marker.setStyle({ dashArray: "" });
+      }
+    });
   }
 
   function render() {
     ctx.layer.clearLayers();
     _markers.clear();
+    _dashMarkers.length = 0;
 
     const stations = Object.values(ctx.STATIONS);
 
@@ -91,7 +119,7 @@ export function createStations(ctx) {
 
       if (ctx.SEARCH_TERM) {
         const q = ctx.SEARCH_TERM.toLowerCase();
-        if (!s.name.toLowerCase().includes(q) && !s.comuna.toLowerCase().includes(q)) {
+        if (!s.name.toLowerCase().includes(q) && !s.comuna.toLowerCase().includes(q) && !s.region.toLowerCase().includes(q)) {
           return null;
         }
       }
@@ -152,6 +180,7 @@ export function createStations(ctx) {
       );
 
       _markers.set(s.name, marker);
+      _dashMarkers.push({ marker, ica: maxIca });
 
       marker.on("click", () => {
         if (ctx.layer.zoomToShowLayer) {
@@ -438,5 +467,5 @@ export function createStations(ctx) {
     URL.revokeObjectURL(url);
   });
 
-  return { load, render, openChartPanel };
+  return { load, render, openChartPanel, updateColorblind };
 }

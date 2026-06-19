@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const stations = createStations(ctx);
   ctx._stationsRender = stations.render;
+  ctx._updateColorblind = stations.updateColorblind;
   const wind = createWind(ctx);
   const sources = createSources(ctx);
   const toggles = createToggles(ctx, wind);
