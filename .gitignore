@@ -1,0 +1,11 @@
+# Datos generados por CI (GitHub Actions)
+datos_sinca.json
+datos_meteo_raw.json
+datos_meteo.json
+wind_field.json
+fuentes.json
+
+# Python
+__pycache__/
+*.pyc
+.env

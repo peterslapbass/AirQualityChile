@@ -1,30 +1,37 @@
 import json
+import sys
 import numpy as np
 from scipy.interpolate import griddata
 
-# =========================
-# CONFIG
-# =========================
-GRID_SIZE = 50  # puedes subir a 80 después
+GRID_SIZE = 50
 
-# =========================
-# LOAD DATA
-# =========================
-with open("datos_meteo.json") as f:
-    stations = json.load(f)
+try:
+    with open("datos_meteo.json") as f:
+        stations = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError) as e:
+    print(f"Error al leer datos_meteo.json: {e}")
+    sys.exit(1)
+
+if len(stations) < 3:
+    print(f"Error: solo {len(stations)} estaciones, se necesitan al menos 3")
+    sys.exit(1)
 
 points = []
 u_vals = []
 v_vals = []
+skipped = 0
 
 for s in stations:
-    lat = s["lat"]
-    lon = s["lon"]
-    speed = s["wind_speed"]
-    direction = s["wind_dir"]
+    lat = s.get("lat")
+    lon = s.get("lon")
+    speed = s.get("wind_speed", 0)
+    direction = s.get("wind_dir", 0)
 
-    # convertir a radianes
-    theta = np.radians(direction + 180)  # corregir dirección
+    if lat is None or lon is None:
+        skipped += 1
+        continue
+
+    theta = np.radians(direction + 180)
 
     u = speed * np.cos(theta)
     v = speed * np.sin(theta)
@@ -37,30 +44,20 @@ points = np.array(points)
 u_vals = np.array(u_vals)
 v_vals = np.array(v_vals)
 
-# =========================
-# GRID
-# =========================
-min_lon, max_lon = points[:,0].min(), points[:,0].max()
-min_lat, max_lat = points[:,1].min(), points[:,1].max()
+min_lon, max_lon = points[:, 0].min(), points[:, 0].max()
+min_lat, max_lat = points[:, 1].min(), points[:, 1].max()
 
 grid_lon, grid_lat = np.meshgrid(
     np.linspace(min_lon, max_lon, GRID_SIZE),
     np.linspace(min_lat, max_lat, GRID_SIZE)
 )
 
-# =========================
-# INTERPOLATION
-# =========================
 u_grid = griddata(points, u_vals, (grid_lon, grid_lat), method='linear')
 v_grid = griddata(points, v_vals, (grid_lon, grid_lat), method='linear')
 
-# fallback para NaN
-u_grid = np.nan_to_num(u_grid)
-v_grid = np.nan_to_num(v_grid)
+u_grid = np.nan_to_num(u_grid, nan=0.0, posinf=0.0, neginf=0.0)
+v_grid = np.nan_to_num(v_grid, nan=0.0, posinf=0.0, neginf=0.0)
 
-# =========================
-# SAVE
-# =========================
 output = {
     "grid_size": GRID_SIZE,
     "bounds": {
@@ -76,4 +73,4 @@ output = {
 with open("wind_field.json", "w") as f:
     json.dump(output, f)
 
-print("✅ wind_field.json generado")
+print(f"wind_field.json generado ({len(stations)} estaciones, {skipped} omitidas)")

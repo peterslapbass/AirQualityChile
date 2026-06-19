@@ -1,0 +1,18 @@
+{
+  "name": "Calidad del Aire Chile",
+  "short_name": "Aire Chile",
+  "description": "Dashboard interactivo de calidad del aire y meteorología en Chile",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0e0e",
+  "theme_color": "#0e0e0e",
+  "orientation": "any",
+  "categories": ["weather", "environment", "science"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%230e0e0e'/%3E%3Ctext x='256' y='340' font-size='280' text-anchor='middle' fill='%234fc3f7'%3E🌫%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

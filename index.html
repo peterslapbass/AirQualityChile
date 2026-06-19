@@ -6,6 +6,7 @@
 
 <title>🌫️ Dashboard Calidad del Aire Chile (SINCA + RedMeteo)</title>
 
+<link rel="manifest" href="/manifest.json"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -346,6 +347,7 @@ body {
     transform: translateY(100%);
     transition: transform 0.3s ease;
     z-index: 600;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   #sidebar.sheet-open { transform: translateY(0); }
 
@@ -363,8 +365,13 @@ body {
     transform: translateY(100%);
     transition: transform 0.3s ease;
     z-index: 600;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   #chart-panel.open { transform: translateY(0); }
+
+  #sidebar-body {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* Handle visual encima de ambos sheets */
   #sheet-handle {
@@ -398,14 +405,15 @@ body {
 <body>
 
 <!-- Overlay para cerrar sheets -->
-<div id="sheet-overlay"></div>
+<div id="sheet-overlay" role="presentation"></div>
 
 <!-- Sidebar (desktop: fijo izquierda / móvil: bottom sheet) -->
 <div id="sidebar">
   <div id="sheet-handle"></div>
   <div id="sidebar-header">
     <div id="sidebar-title">Aire Chile (SINCA + RedMeteo) <span style="font-size:11px;color:var(--muted);font-weight:400">· SINCA</span></div>
-    <select id="filter" style="margin-top:10px">
+    <input id="search" type="search" placeholder="Buscar estación..." aria-label="Buscar estación por nombre o comuna" style="width:100%;margin-top:10px;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;outline:none">
+    <select id="filter" aria-label="Filtrar por contaminante" style="margin-top:6px">
       <option value="ALL">Todos los contaminantes</option>
       <option value="MP-2,5">MP 2.5</option>
       <option value="MP-10">MP 10</option>
@@ -414,14 +422,19 @@ body {
       <option value="O3">O₃ Ozono</option>
     </select>
     <div style="margin-top:10px; display:flex; gap:6px;">
-      <button id="toggle-air" class="toggle-btn active">Aire</button>
-      <button id="toggle-wind" class="toggle-btn active">Viento</button>
-      <button id="toggle-sources" class="toggle-btn active">🏭</button>
+      <button id="toggle-air" class="toggle-btn active" aria-pressed="true" aria-label="Mostrar capa de calidad del aire">Aire</button>
+      <button id="toggle-wind" class="toggle-btn active" aria-pressed="true" aria-label="Mostrar capa de viento">Viento</button>
+      <button id="toggle-sources" class="toggle-btn active" aria-pressed="true" aria-label="Mostrar fuentes emisoras">Fuentes</button>
      </div>
 
   </div>
   <div id="sidebar-body">
-    <div class="section-label">Alertas</div>
+    <div id="stale-warning" style="display:none;padding:8px 10px;margin-bottom:10px;background:#2a1f0a;border:1px solid #5a3f0a;border-radius:5px;font-size:11px;color:#f0a830;">
+      Datos pueden estar desactualizados. Última actualización: <span id="stale-time"></span>
+    </div>
+    <div class="section-label">Alertas <span style="font-weight:400;text-transform:none;letter-spacing:0">
+      (umbral: <input id="alert-threshold" type="number" value="100" min="1" max="500" style="width:50px;padding:2px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--font);font-size:11px">)
+    </span></div>
     <div id="alerts"></div>
     <div class="section-label">Ranking</div>
     <div id="ranking"></div>
@@ -430,11 +443,11 @@ body {
 
 <!-- Mapa -->
 <div id="main">
-  <div id="map"></div>
+  <div id="map" role="application" aria-label="Mapa de calidad del aire en Chile"></div>
 </div>
 
 <!-- Botón flotante — solo móvil -->
-<button id="fab">☰</button>
+<button id="fab" aria-label="Abrir panel de estaciones">☰</button>
 
 <!-- Panel de series (desktop: slide derecha / móvil: bottom sheet) -->
 <div id="chart-panel">
@@ -444,7 +457,10 @@ body {
       <div id="chart-station-name">—</div>
       <div id="chart-region"></div>
     </div>
-    <button id="chart-close">✕</button>
+    <div style="display:flex;gap:4px;flex-shrink:0">
+      <button id="chart-download" aria-label="Descargar datos como CSV" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;cursor:pointer;padding:3px 7px;font-size:11px;font-family:var(--font);transition:border-color 0.15s,color 0.15s">↓</button>
+      <button id="chart-close" aria-label="Cerrar panel">✕</button>
+    </div>
   </div>
   <div id="chart-pills"></div>
   <div id="chart-stats"></div>
@@ -456,10 +472,17 @@ body {
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="mapa-sinca.js" defer></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
+<script type="module" src="src/main.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
 
 <script>
-// Lógica de sheets — independiente de mapa-sinca.js
 (function() {
   const overlay  = document.getElementById('sheet-overlay');
   const sidebar  = document.getElementById('sidebar');
@@ -483,23 +506,49 @@ body {
     if (!sidebar.classList.contains('sheet-open')) overlay.classList.remove('visible');
   }
 
-  // FAB abre el sidebar en móvil
   fab.addEventListener('click', openSidebar);
 
-  // Overlay cierra todo
   overlay.addEventListener('click', () => {
     closeSidebar();
     closePanel();
   });
 
-  // Reasignar el botón cerrar del panel para también limpiar overlay
-  document.getElementById('chart-close').addEventListener('click', closePanel);
-
-  // Exponer closePanel globalmente para que mapa-sinca.js lo use
   window.closeChartPanel = closePanel;
   window.openChartSheetOverlay = function() {
     if (isMobile()) overlay.classList.add('visible');
   };
+
+  // Swipe-to-dismiss en mobile sheets
+  function addSwipe(el, onSwipe) {
+    let startY = 0, currentY = 0, dragging = false;
+    const threshold = 80;
+
+    el.addEventListener('touchstart', e => {
+      if (!isMobile()) return;
+      startY = e.touches[0].clientY;
+      currentY = startY;
+      dragging = true;
+      el.style.transition = 'none';
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      currentY = e.touches[0].clientY;
+      const delta = currentY - startY;
+      if (delta > 0) el.style.transform = `translateY(${delta}px)`;
+    }, { passive: true });
+
+    el.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      el.style.transition = '';
+      el.style.transform = '';
+      if (currentY - startY > threshold) onSwipe();
+    }, { passive: true });
+  }
+
+  addSwipe(sidebar, closeSidebar);
+  addSwipe(panel, closePanel);
 })();
 </script>
 
