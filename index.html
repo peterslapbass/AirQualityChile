@@ -415,6 +415,24 @@ body {
 
   .leaflet-popup-content-wrapper { font-size: 11px; }
 }
+
+/* Info modal cards */
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s var(--ease);
+}
+.info-card:hover { border-color: var(--faint); }
+.info-title  { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+.info-desc   { font-size: 12px; line-height: 1.6; color: var(--text2); }
+.info-table  { margin-top: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.info-tr     { display: flex; border-bottom: 1px solid var(--border); font-size: 11px; }
+.info-tr:last-child { border-bottom: none; }
+.info-tc     { flex: 1; padding: 5px 8px; color: var(--text2); }
+.info-tr:first-child .info-tc { font-weight: 600; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
 </style>
 </head>
 <body>
@@ -422,11 +440,77 @@ body {
 <!-- Overlay para cerrar sheets -->
 <div id="sheet-overlay" role="presentation"></div>
 
+<!-- Modal de información -->
+<div id="info-modal" role="dialog" aria-modal="true" aria-label="Cómo se calculan los datos" style="display:none;position:fixed;inset:0;z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div id="info-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);cursor:pointer"></div>
+  <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);max-width:460px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:var(--shadow-lg);scrollbar-width:thin;scrollbar-color:var(--faint) transparent">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:600;letter-spacing:-0.01em">Cómo se calculan los datos</div>
+      <button id="info-close" aria-label="Cerrar" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:var(--radius-sm);width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s var(--ease)">✕</button>
+    </div>
+
+    <div class="info-card">
+      <div class="info-title">Índice ICA Chile</div>
+      <div class="info-desc">El Índice de Calidad del Aire (ICA) se calcula interpolando linealmente entre breakpoints del estándar EPA, adaptados para Chile. Cada contaminante tiene su propia escala.</div>
+      <div class="info-table">
+        <div class="info-tr"><span class="info-tc">ICA</span><span class="info-tc">MP2.5 (µg/m³)</span><span class="info-tc">Categoría</span></div>
+        <div class="info-tr"><span class="info-tc">0–50</span><span class="info-tc">0–12</span><span class="info-tc" style="color:#00e400">Buena</span></div>
+        <div class="info-tr"><span class="info-tc">51–100</span><span class="info-tc">12–35</span><span class="info-tc" style="color:#ffff00">Regular</span></div>
+        <div class="info-tr"><span class="info-tc">101–150</span><span class="info-tc">35–55</span><span class="info-tc" style="color:#ff7e00">Mala</span></div>
+        <div class="info-tr"><span class="info-tc">151–200</span><span class="info-tc">55–150</span><span class="info-tc" style="color:#ff0000">Muy mala</span></div>
+        <div class="info-tr"><span class="info-tc">201–500</span><span class="info-tc">150+</span><span class="info-tc" style="color:#8f3f97">Crítica</span></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-title">Clasificación por colores</div>
+      <div class="info-desc">Cada estación en el mapa muestra un círculo cuyo color corresponde al valor ICA más alto entre todos los contaminantes medidos. El radio del círculo escala dinámicamente según la magnitud del ICA.</div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-title">Campo de viento interpolado</div>
+      <div class="info-desc">Las estaciones meteorológicas de RedMeteo reportan velocidad y dirección del viento. Con esos datos se genera un grid interpolado de 50×50 celdas usando interpolación bilineal (SciPy). Las partículas animadas representan el flujo del viento en cada punto del mapa.</div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-title">Normalización de contaminantes</div>
+      <div class="info-desc">La API del SINCA usa distintos nombres para un mismo contaminante (ej: "MP-2,5", "PM25", "PM2.5"). El sistema normaliza todos estos nombres a un formato estándar antes de procesarlos.</div>
+      <div class="info-table">
+        <div class="info-tr"><span class="info-tc">SINCA</span><span class="info-tc">Estandarizado</span></div>
+        <div class="info-tr"><span class="info-tc">MP-2,5 / PM25 / PM2.5</span><span class="info-tc">MP-2,5</span></div>
+        <div class="info-tr"><span class="info-tc">MP-10 / PM10</span><span class="info-tc">MP-10</span></div>
+        <div class="info-tr"><span class="info-tc">NO2 / Dióxido de Nitrógeno</span><span class="info-tc">NO2</span></div>
+        <div class="info-tr"><span class="info-tc">O3 / Ozono</span><span class="info-tc">O3</span></div>
+        <div class="info-tr"><span class="info-tc">CO / Monóxido de Carbono</span><span class="info-tc">CO</span></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-title">Alertas</div>
+      <div class="info-desc">Una estación genera alerta cuando cualquiera de sus contaminantes supera el umbral configurable (por defecto ICA > 100, equivalente a categoría "Mala"). Puedes ajustar este umbral desde el panel lateral.</div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-title">Fuentes de datos</div>
+      <div class="info-desc">
+        <div style="margin-bottom:4px">• <a href="https://sinca.mma.gob.cl" target="_blank" style="color:var(--accent)">SINCA</a> — Sistema de Información Nacional de Calidad del Aire (MMA Chile)</div>
+        <div style="margin-bottom:4px">• <a href="https://redmeteo.cl" target="_blank" style="color:var(--accent)">RedMeteo</a> — Red Ciudadana de Estaciones Meteorológicas</div>
+        <div>• <a href="https://datosretc.mma.gob.cl" target="_blank" style="color:var(--accent)">RETC 2024</a> — Registro de Emisiones y Transferencia de Contaminantes</div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">Los datos se actualizan automáticamente cada 30 minutos vía GitHub Actions.</div>
+    </div>
+
+  </div>
+</div>
+
 <!-- Sidebar (desktop: fijo izquierda / móvil: bottom sheet) -->
 <div id="sidebar">
   <div id="sheet-handle"></div>
   <div id="sidebar-header">
-    <div id="sidebar-title">Aire Chile <span style="font-size:11px;color:var(--muted);font-weight:400">· SINCA + RedMeteo</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div id="sidebar-title">Aire Chile <span style="font-size:11px;color:var(--muted);font-weight:400">· SINCA + RedMeteo</span></div>
+      <button id="info-btn" aria-label="Cómo se calculan los datos" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s var(--ease);flex-shrink:0">ⓘ</button>
+    </div>
     <input id="search" type="search" placeholder="Buscar estación..." aria-label="Buscar estación por nombre o comuna" style="width:100%;margin-top:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color 0.2s var(--ease);-webkit-appearance:none">
     <style>#search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }</style>
     <select id="filter" aria-label="Filtrar por contaminante" style="margin-top:6px">
@@ -531,6 +615,29 @@ if ('serviceWorker' in navigator) {
   window.openChartSheetOverlay = function() {
     if (isMobile()) overlay.classList.add('visible');
   };
+
+  // Modal de información
+  var infoModal = document.getElementById('info-modal');
+  var infoBtn   = document.getElementById('info-btn');
+  var infoClose = document.getElementById('info-close');
+  var infoBg    = document.getElementById('info-backdrop');
+
+  function openInfo() {
+    infoModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeInfo() {
+    infoModal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  if (infoBtn)  infoBtn.addEventListener('click', openInfo);
+  if (infoClose) infoClose.addEventListener('click', closeInfo);
+  if (infoBg)   infoBg.addEventListener('click', closeInfo);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && infoModal && infoModal.style.display === 'flex') closeInfo();
+  });
 
   // Swipe-to-dismiss en mobile sheets
   function addSwipe(el, onSwipe) {
