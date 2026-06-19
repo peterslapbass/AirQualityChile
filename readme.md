@@ -1,168 +1,124 @@
-# 🌫️ Dashboard Calidad del Aire Chile (SINCA + RedMeteo)
+# Dashboard Calidad del Aire Chile (SINCA + RedMeteo)
 
-Dashboard interactivo en tiempo real para visualizar calidad del aire y condiciones meteorológicas en Chile.
+Dashboard interactivo en tiempo real para visualizar calidad del aire, condiciones meteorológicas y fuentes emisoras en Chile.
 
-Integra datos del sistema **SINCA** y estaciones meteorológicas procesadas automáticamente mediante **GitHub Actions**.
+Integra datos del sistema **SINCA** (MMA), **RedMeteo** y **RETC 2024**, procesados automáticamente mediante **GitHub Actions**.
 
 https://peterslapbass.github.io/AirQualityChile/
 
 ---
 
-## 🚀 Características
+## Características
 
-### 🗺️ Visualización geoespacial
-- Mapa interactivo con Leaflet
-- Marcadores dinámicos por estación
-- Capas de contaminantes activables
+### Visualización geoespacial
+- Mapa interactivo con Leaflet + CartoDB
+- Clustering geográfico de estaciones SINCA y fuentes RETC
+- 3 capas activables: Aire, Viento, Fuentes
 
-### 🌫️ Contaminantes atmosféricos
-- MP 2.5
-- MP 10
-- NO₂
-- CO
-- O₃
+### Calidad del aire
+- MP 2.5, MP 10, NO₂, CO, O₃, SO₂
+- Índice ICA Chile (breakpoints EPA adaptados)
+- Radio dinámico de marcadores según ICA
+- Colores por categoría: Buena / Regular / Mala / Muy mala / Crítica
 
-### 🌬️ Meteorología integrada
-- Velocidad del viento
-- Dirección del viento
-- Temperatura
-- Humedad
-- Presión atmosférica
+### Meteorología
+- Velocidad y dirección del viento
+- Temperatura, humedad, presión atmosférica
+- Campo de viento interpolado (grid 50×50 con SciPy)
+- Partículas animadas sobre el mapa
 
-### 🧭 Modelos avanzados
-- Campo de viento interpolado (grid vectorial)
-- Normalización automática de datos heterogéneos
+### Fuentes RETC 2024
+- Marcadores clusterizados con escala logarítmica
+- Popups con empresa, combustible y top 5 contaminantes
 
-### 📊 Analítica
-- Ranking de estaciones con peor calidad del aire
-- Sistema de alertas automáticas
-- Filtros dinámicos por contaminante
+### Ranking y alertas
+- Top 10 estaciones por peor valor/ICA
+- Indicador de tendencia (↑ subiendo / ↓ bajando / → estable)
+- Tooltip con detalles al hover
+- Alertas configurables por umbral ICA
+- Detección de datos desactualizados (>1h)
 
-### ⚡ Automatización
-- Actualización automática cada **30 minutos**
-- Pipeline ETL con GitHub Actions
+### Panel de series
+- Chart.js con línea horaria
+- Pestañas por contaminante
+- Estadísticas: Actual, Máx, Prom, ICA
+- Proyección 3h (media móvil con tendencia lineal)
+- Recomendaciones de salud por ICA + contaminante (OMS/EPA)
+- Descarga CSV
 
-## 🧱 Arquitectura del sistema
+### PWA y mobile
+- Service Worker con cache-first (assets) y network-first (datos)
+- Manifest para instalación como app
+- Bottom sheets con swipe-to-dismiss
+- Safe area insets para iOS
+- Loading spinner inicial
+- Toast al actualizar datos
 
--EXTRACT
-├── SINCA API
-└── Red Meteo API
+### Accesibilidad
+- aria-label, aria-pressed, aria-hidden en todos los elementos interactivos
+- Navegación por teclado (Enter/Space) en ranking
+- Modo daltónico (patrones dashArray en marcadores)
+- Modal informativo con explicación de cálculos
 
--TRANSFORM
-├── process_meteo.py
-└── Normalización de datos
+---
 
--LOAD / COMPUTE
-└── generate_wind_field.py
-   └── Interpolación de campo de viento
+## Arquitectura del sistema
 
-## 📁 Estructura del proyecto
+```
+EXTRACT
+├── SINCA API → fetch_sinca.py
+└── RedMeteo API → fetch_meteo.py
 
--/project
-│
-├── index.html
-├── app.js
-│
-├── process_meteo.py
-├── generate_wind_field.py
-│
-├── datos_sinca.json
-├── datos_meteo_raw.json
-├── datos_meteo.json
-├── wind_field.json
-│
-└── .github/workflows/update.yml
+TRANSFORM
+├── process_meteo.py → normalización de datos
+└── Normalización de contaminantes (MP-2,5, PM25 → MP-2,5)
 
+LOAD / COMPUTE
+├── generate_wind_field.py → interpolación SciPy
+└── datos_sinca.json, datos_meteo.json, wind_field.json
 
-## ⚙️ Cómo funciona
-### 🌫️ SINCA
-- Descarga automática desde API oficial
-- Normalización de contaminantes
-- Generación de snapshot por estación
-### 🌬️ Meteo
-- Procesamiento de estaciones meteorológicas
-- Extracción de variables:
-- viento
-- temperatura
-- humedad
-- presión
-### 🧭 Campo de viento
-- Conversión a vectores (u, v)
-- Interpolación espacial con SciPy
-- Generación de grid climático
+FRONTEND (ES modules, sin bundler)
+└── src/
+    ├── main.js      → entry point, ctx, loops
+    ├── stations.js  → SINCA, ranking, alertas, chart
+    ├── wind.js      → flechas + partículas animadas
+    ├── sources.js   → RETC con markercluster
+    ├── toggles.js   → capas + modo daltónico
+    └── utils.js     → ICA, trend, predicción, recomendaciones
+```
 
+## Clasificación ICA Chile
 
-## 🧠 Modelo de datos
-### Estación meteorológica
-{
-  "name": "Estación X",
-  "lat": -33.45,
-  "lon": -70.66,
-  "wind_speed": 4.2,
-  "wind_dir": 180,
-  "temp": 18.5,
-  "humidity": 55,
-  "pressure": 1016.7
-}
-### Campo de viento interpolado
-{
-  "grid_size": 50,
-  "bounds": {
-    "min_lat": -34.0,
-    "max_lat": -32.0,
-    "min_lon": -71.5,
-    "max_lon": -69.5
-  },
-  "u": [[...]],
-  "v": [[...]]
-}
+| ICA | MP2.5 (µg/m³) | Categoría | Color |
+|-----|---------------|-----------|-------|
+| 0–50 | 0–12 | Buena | 🟢 |
+| 51–100 | 12–35 | Regular | 🟡 |
+| 101–150 | 35–55 | Mala | 🟠 |
+| 151–200 | 55–150 | Muy mala | 🔴 |
+| 201–500 | 150+ | Crítica | 🟣 |
 
-## 🎨 Clasificación de calidad del aire
-- Valor	Estado	Color
-- 0–25	Bueno	🟢
-- 26–50	Regular	🟡
-- 51–100	Moderado	🟠
-- 101–150	Malo	🔴
-- 150+	Crítico	🟣
+## Actualización de datos
 
-## 🔄 Actualización de datos 
-- Cada 30 minutos Ejecutado vía GitHub Actions 
-- Sin intervención manual 
+- Cada 15 minutos vía GitHub Actions (workflow automático)
+- Frontend refresca cada 5 minutos si la pestaña está visible
+- Sin intervención manual
 
-## 🧩 Funcionalidades del mapa 
-- 🗺️ Marcadores dinámicos por estación 
-- 🌫️ Capas de contaminantes 
-- 🌬️ Visualización de viento (vector field) 
-- 📊 Panel lateral de ranking 
-- 📱 Adaptación mobile 
+## Tecnologías
 
-## 📌 Notas técnicas Normalización de nombres de contaminantes (MP-2.5, PM25, etc.) 
-- Manejo de datasets inconsistentes del SINCA 
-- Interpolación espacial con scipy.griddata 
-- Separación clara entre extracción y transformación de datos 
-- Pipeline automatizado sin intervención manual 
+- **Frontend:** HTML + CSS + JS (ES modules, sin bundler)
+- **Mapa:** Leaflet + Leaflet.markercluster
+- **Gráficos:** Chart.js 4
+- **Backend:** Python 3.9 (pipeline ETL)
+- **CI/CD:** GitHub Actions (c/15 min)
+- **PWA:** Service Worker + Manifest
 
-## 🚀 Futuras mejoras 
-- 🧠 Índice de Calidad del Aire (ICA Chile) 
-- 📍 Clustering geográfico de estaciones
-- 🌪️ Predicción simple de viento (modelos básicos) 
-- 📱 Versión PWA (instalable como app) 
-- 🔔 Alertas personalizadas por usuario 
+## Autor
 
-## 👤 Autor 
-- Proyecto de visualización ambiental basado en datos SINCA y meteorología de Chile, desarrollado por Pedro Rubio. 
-- Enfoque en: procesamiento de datos ambientales visualización geoespacial automatización con GitHub Actions 
-- Enfoque “vibecoding” + data engineering ligero 
+Proyecto de visualización ambiental basado en datos SINCA, RedMeteo y RETC de Chile, desarrollado por Pedro Rubio.
+Enfoque: procesamiento de datos ambientales, visualización geoespacial, automatización con GitHub Actions.
 
-## 🙏🏻 🙏🏼 🙏🏽 🙏🏾 🙏🏿 Agradecimientos 
-- Red Meteorológica Aficionada de Chile. (2019). Sitio web RedMeteo. Red Ciudadana De Estaciones Meteorológicas. Desde 22-04-2026, https://www.redmeteo.cl/ 
-- SINCA. Sistema de Información Nacional de Calidad del Aire, Ministerio de Medio Ambiente, Gobierno de Chile. Desde 22-04-2026, https://sinca.mma.gob.cl
+## Agradecimientos
 
-## Última actualización
-
-- Incorporación de fuentes puntuales RETC 2024.
-- Mejoras de compatibilidad móvil (Safari/iOS).
-- Correcciones de caché y actualización automática.
-- Optimización visual de capas y superposición de marcadores.
-
-> Nota: Las emisiones RETC pueden presentar distintas unidades dependiendo del tipo de fuente, combustible y metodología reportada.
+- Red Meteorológica Aficionada de Chile (RedMeteo) — https://www.redmeteo.cl
+- SINCA, Ministerio de Medio Ambiente, Gobierno de Chile — https://sinca.mma.gob.cl
+- RETC, Registro de Emisiones y Transferencia de Contaminantes — https://datosretc.mma.gob.cl
