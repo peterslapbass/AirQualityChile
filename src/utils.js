@@ -176,7 +176,7 @@ const RECOMMENDATIONS = {
     "SO2":    { note: "Dióxido de azufre. Irrita ojos y garganta, puede causar sibilancias.", source: "EPA" }
   },
   sources: [
-    { name: "Organización Mundial de la Salud (OMS)", url: "https://www.who.int/es/publications/i/item/9789240034228" },
+    { name: "Organización Mundial de la Salud (OMS)", url: "https://www.who.int/publications/i/item/9789240034228" },
     { name: "Agencia de Protección Ambiental de EE. UU. (EPA)", url: "https://www.airnow.gov/aqi/aqi-basics/" },
     { name: "Ministerio del Medio Ambiente — SINCA", url: "https://sinca.mma.gob.cl" }
   ]
