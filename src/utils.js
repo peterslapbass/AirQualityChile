@@ -80,6 +80,60 @@ export function calcICA(pollutant, value) {
   return null;
 }
 
+export function icaDash(ica) {
+  if (ica == null) return "";
+  if (ica <= 50)  return "";
+  if (ica <= 100) return "4 2";
+  if (ica <= 150) return "2 2";
+  if (ica <= 200) return "6 2 2 2";
+  return "8 2 2 2 2 2";
+}
+
+export function calcTrend(values) {
+  const valid = values.filter(v => v != null);
+  if (valid.length < 3) return "stable";
+  const recent = valid.slice(-3);
+  const prev = valid.slice(-6, -3);
+  if (prev.length < 2) return "stable";
+  const avgRecent = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const avgPrev = prev.reduce((a, b) => a + b, 0) / prev.length;
+  const diff = avgRecent - avgPrev;
+  if (diff > avgPrev * 0.05) return "up";
+  if (diff < -avgPrev * 0.05) return "down";
+  return "stable";
+}
+
+export function calcPrediction(serie, steps) {
+  steps = steps || 3;
+  const vals = serie.map(r => r.val).filter(v => v != null);
+  if (vals.length < 3) return [];
+  // simple moving average of last 4 points
+  const window = vals.slice(-4);
+  const avg = window.reduce((a, b) => a + b, 0) / window.length;
+  // linear trend from last 4
+  const n = window.length;
+  const xMean = (n - 1) / 2;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) {
+    num += (i - xMean) * (window[i] - avg);
+    den += (i - xMean) ** 2;
+  }
+  const slope = den > 0 ? num / den : 0;
+  const lastTs = serie[serie.length - 1].ts;
+  const lastHour = new Date(lastTs.replace(" ", "T")).getTime();
+  const predictions = [];
+  for (let i = 1; i <= steps; i++) {
+    const predVal = avg + slope * (n - 1 + i - xMean);
+    if (predVal > 0) {
+      predictions.push({
+        ts: new Date(lastHour + i * 3600000).toISOString().slice(0, 16),
+        val: Math.round(predVal * 10) / 10
+      });
+    }
+  }
+  return predictions;
+}
+
 export function icaColor(ica) {
   if (ica == null) return "#666";
   if (ica <= 50) return "#00e400";
@@ -96,4 +150,56 @@ export function icaLabel(ica) {
   if (ica <= 150) return "Mala";
   if (ica <= 200) return "Muy mala";
   return "Crítica";
+}
+
+const RECOMMENDATIONS = {
+  general: [
+    { maxIca: 50,  text: "Sin restricciones. Disfrute de actividades al aire libre con normalidad." },
+    { maxIca: 100, text: "Actividades al aire libre normales. Personas excepcionalmente sensibles deben monitorear síntomas." },
+    { maxIca: 150, text: "Reducir actividad física prolongada al aire libre. Tomar pausas frecuentes." },
+    { maxIca: 200, text: "Evitar esfuerzo prolongado al aire libre. Preferir actividades en interiores." },
+    { maxIca: 500, text: "Evitar toda actividad al aire libre. Permanecer en interiores con puertas y ventanas cerradas." }
+  ],
+  sensitive: [
+    { maxIca: 50,  text: "Sin restricciones." },
+    { maxIca: 100, text: "Reducir esfuerzo prolongado al aire libre si presenta síntomas." },
+    { maxIca: 150, text: "Evitar actividad física prolongada al aire libre. Mantener medicación a mano." },
+    { maxIca: 200, text: "Evitar toda actividad al aire libre. Permanecer en interiores." },
+    { maxIca: 500, text: "Permanecer en interiores. Usar mascarilla si debe salir. Mantener medicación." }
+  ],
+  byPollutant: {
+    "MP-2,5": { note: "Material particulado fino. Penetra profundamente en los pulmones.", source: "OMS" },
+    "MP-10":  { note: "Material particulado grueso. Afecta vías respiratorias superiores.", source: "OMS" },
+    "O3":     { note: "Ozono troposférico. Irrita ojos y garganta, reduce función pulmonar.", source: "EPA" },
+    "NO2":    { note: "Dióxido de nitrógeno. Irrita vías respiratorias, agrava asma.", source: "EPA" },
+    "CO":     { note: "Monóxido de carbono. Reduce el oxígeno en sangre, afecta sistema cardiovascular.", source: "EPA" },
+    "SO2":    { note: "Dióxido de azufre. Irrita ojos y garganta, puede causar sibilancias.", source: "EPA" }
+  },
+  sources: [
+    { name: "Organización Mundial de la Salud (OMS)", url: "https://www.who.int/es/publications/i/item/9789240034228" },
+    { name: "Agencia de Protección Ambiental de EE. UU. (EPA)", url: "https://www.airnow.gov/aqi/aqi-basics/" },
+    { name: "Ministerio del Medio Ambiente — SINCA", url: "https://sinca.mma.gob.cl" }
+  ]
+};
+
+export function dominantPollutant(station) {
+  const entries = Object.entries(station.values || {});
+  if (!entries.length) return null;
+  let worst = null;
+  let worstVal = -1;
+  for (const [key, val] of entries) {
+    const ica = val.ica || val.value || 0;
+    if (ica > worstVal) { worstVal = ica; worst = key; }
+  }
+  return worst;
+}
+
+export function healthRecommendation(ica, pollutant) {
+  if (ica == null) return null;
+
+  const general = RECOMMENDATIONS.general.find(r => ica <= r.maxIca) || RECOMMENDATIONS.general[RECOMMENDATIONS.general.length - 1];
+  const sensitive = RECOMMENDATIONS.sensitive.find(r => ica <= r.maxIca) || RECOMMENDATIONS.sensitive[RECOMMENDATIONS.sensitive.length - 1];
+  const pollInfo = RECOMMENDATIONS.byPollutant[pollutant] || null;
+
+  return { general: general.text, sensitive: sensitive.text, pollutant: pollInfo, sources: RECOMMENDATIONS.sources };
 }

@@ -294,6 +294,22 @@ body {
 .cstat-val { font-size: 18px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .cstat-unit{ font-size: 10px; color: var(--muted); margin-left: 2px; font-weight: 400; }
 
+#chart-recommend {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  line-height: 1.5;
+}
+#chart-recommend:empty { display: none; }
+.rec-title { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+.rec-row   { display: flex; gap: 6px; margin-bottom: 4px; }
+.rec-label { color: var(--muted); flex-shrink: 0; min-width: 70px; }
+.rec-text  { color: var(--text2); }
+.rec-note  { color: var(--accent); font-size: 10px; margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--border); }
+.rec-source { font-size: 9px; color: var(--muted); margin-top: 4px; }
+.rec-source a { color: var(--accent); text-decoration: none; }
+.rec-source a:hover { text-decoration: underline; }
+
 .status-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
 .status-bueno   { background: #0e2a0e; color: #5dc45d; border: 1px solid #1a4a1a; }
 .status-regular { background: #2a200a; color: #f0a830; border: 1px solid #4a380a; }
@@ -416,6 +432,61 @@ body {
   .leaflet-popup-content-wrapper { font-size: 11px; }
 }
 
+/* Loading spinner */
+#loading {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(14,14,14,0.85);
+  transition: opacity 0.3s var(--ease);
+}
+#loading.hidden { opacity: 0; pointer-events: none; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Leyenda ICA en el mapa */
+#map-legend {
+  position: absolute;
+  bottom: 20px; left: 20px;
+  z-index: 1000;
+  background: rgba(14,14,14,0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--text2); line-height: 1.8;
+}
+.legend-swatch {
+  width: 12px; height: 12px; border-radius: 3px;
+  flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
+}
+.legend-range { color: var(--muted); font-size: 9px; margin-left: auto; }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  z-index: 9999;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+  pointer-events: none;
+  white-space: nowrap;
+}
+#toast.visible { opacity: 1; }
+
 /* Info modal cards */
 .info-card {
   background: var(--surface);
@@ -525,6 +596,7 @@ body {
       <button id="toggle-air" class="toggle-btn active" aria-pressed="true" aria-label="Mostrar capa de calidad del aire">Aire</button>
       <button id="toggle-wind" class="toggle-btn active" aria-pressed="true" aria-label="Mostrar capa de viento">Viento</button>
       <button id="toggle-sources" class="toggle-btn active" aria-pressed="true" aria-label="Mostrar fuentes emisoras">Fuentes</button>
+      <button id="toggle-cblind" class="toggle-btn" aria-pressed="false" aria-label="Activar modo daltónico" title="Modo daltónico">▦</button>
      </div>
 
   </div>
@@ -541,10 +613,23 @@ body {
   </div>
 </div>
 
+<!-- Loading spinner -->
+<div id="loading" class="hidden" aria-hidden="true"><div class="spinner"></div></div>
+
 <!-- Mapa -->
 <div id="main">
   <div id="map" role="application" aria-label="Mapa de calidad del aire en Chile"></div>
+  <div id="map-legend" role="img" aria-label="Escala de colores ICA">
+    <div class="legend-item"><span class="legend-swatch" style="background:#00e400"></span> Buena <span class="legend-range">0–50</span></div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#ffff00"></span> Regular <span class="legend-range">51–100</span></div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#ff7e00"></span> Mala <span class="legend-range">101–150</span></div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#ff0000"></span> Muy mala <span class="legend-range">151–200</span></div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#8f3f97"></span> Crítica <span class="legend-range">201–500</span></div>
+  </div>
 </div>
+
+<!-- Toast -->
+<div id="toast" role="status" aria-live="polite"></div>
 
 <!-- Botón flotante — solo móvil -->
 <button id="fab" aria-label="Abrir panel de estaciones">☰</button>
@@ -564,6 +649,7 @@ body {
   </div>
   <div id="chart-pills"></div>
   <div id="chart-stats"></div>
+  <div id="chart-recommend"></div>
   <div id="chart-wrap">
     <canvas id="seriesChart" role="img" aria-label="Serie horaria del contaminante">Datos SINCA</canvas>
     <div id="chart-empty"></div>

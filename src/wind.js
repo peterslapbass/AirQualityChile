@@ -66,6 +66,9 @@ export function createWind(ctx) {
 
     document.getElementById("seriesChart").style.display = "none";
 
+    const recEl = document.getElementById("chart-recommend");
+    if (recEl) recEl.innerHTML = "";
+
     const empty = document.getElementById("chart-empty");
     empty.style.display = "block";
     empty.textContent = "Datos meteorológicos en tiempo real";

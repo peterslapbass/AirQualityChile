@@ -1,7 +1,8 @@
-import { getValue, getPollutant, getUnit, color, parseSeries, calcICA, icaColor, icaLabel } from './utils.js';
+import { getValue, getPollutant, getUnit, color, parseSeries, calcICA, icaColor, icaLabel, icaDash, calcTrend, calcPrediction, dominantPollutant, healthRecommendation } from './utils.js';
 
 export function createStations(ctx) {
   let chartInstance = null;
+  const _markers = new Map();
 
   function checkStaleness() {
     const warn = document.getElementById("stale-warning");
@@ -33,10 +34,11 @@ export function createStations(ctx) {
 
   async function load() {
     const res = await fetch("datos_sinca.json", {cache: "no-cache"});
-    if (!res.ok) return;
+    if (!res.ok) throw new Error("fetch failed");
     const data = await res.json();
 
     ctx.STATIONS = {};
+    _markers.clear();
 
     data.forEach(station => {
       const { nombre, latitud, longitud, region, comuna, realtime } = station;
@@ -80,6 +82,7 @@ export function createStations(ctx) {
 
   function render() {
     ctx.layer.clearLayers();
+    _markers.clear();
 
     const stations = Object.values(ctx.STATIONS);
 
@@ -110,13 +113,20 @@ export function createStations(ctx) {
 
     processed.forEach(s => {
       const radius = Math.min(16, Math.max(6, 6 + (s.worst / 150) * 10));
-      const marker = L.circleMarker([s.lat, s.lon], {
+      const icas = Object.values(s.values).map(v => v.ica).filter(Boolean);
+      const maxIca = icas.length ? Math.max(...icas) : null;
+      const opts = {
         radius,
         color: "#fff",
         weight: 1.5,
         fillColor: color(s.worst),
         fillOpacity: 0.8
-      }).addTo(ctx.layer);
+      };
+      if (ctx.COLORBLIND && maxIca != null) {
+        const dash = icaDash(maxIca);
+        if (dash) opts.dashArray = dash;
+      }
+      const marker = L.circleMarker([s.lat, s.lon], opts).addTo(ctx.layer);
 
       const entries = s.filteredEntries.filter(([_, val]) => val && val.value != null);
 
@@ -132,12 +142,24 @@ export function createStations(ctx) {
             (ica ? `<span style="margin-left:6px;padding:1px 5px;border-radius:3px;font-size:10px;background:${icaColor(ica)};color:#000">ICA ${ica}</span>` : ``) +
             `</span></div>`;
         }).join("") +
-        `<div style="font-size:10px;color:#555;margin-top:6px">${entries[0]?.[1]?.time || ""}</div>`
+        (() => {
+          const icaVals = entries.map(([_, v]) => v.ica).filter(Boolean);
+          const maxIca = icaVals.length ? Math.max(...icaVals) : null;
+          const rec = maxIca ? healthRecommendation(maxIca, s.name ? dominantPollutant(s) : null) : null;
+          return rec ? `<div style="font-size:9px;color:#888;margin-top:6px;padding-top:4px;border-top:1px solid var(--border)">⚠ ${rec.general}</div>` : "";
+        })() +
+        `<div style="font-size:10px;color:#555;margin-top:4px">${entries[0]?.[1]?.time || ""}</div>`
       );
 
+      _markers.set(s.name, marker);
+
       marker.on("click", () => {
-        ctx.map.flyTo([s.lat, s.lon], 11);
-        openChartPanel(ctx.STATIONS[s.name]);
+        if (ctx.layer.zoomToShowLayer) {
+          ctx.layer.zoomToShowLayer(marker, () => openChartPanel(ctx.STATIONS[s.name]));
+        } else {
+          ctx.map.flyTo([s.lat, s.lon], 11);
+          openChartPanel(ctx.STATIONS[s.name]);
+        }
       });
     });
 
@@ -148,24 +170,61 @@ export function createStations(ctx) {
       return icas.length ? Math.max(...icas) : null;
     });
 
+    const trendCache = {};
+    function getTrend(station) {
+      if (trendCache[station.name]) return trendCache[station.name];
+      const entries = Object.entries(station.series);
+      if (!entries.length) return "stable";
+      const poll = dominantPollutant(station);
+      const serie = poll ? station.series[poll] : null;
+      if (!serie) return "stable";
+      const vals = serie.map(r => r.val).filter(v => v != null);
+      const t = calcTrend(vals);
+      trendCache[station.name] = t;
+      return t;
+    }
+
+    function trendArrow(t) {
+      if (t === "up") return "↑";
+      if (t === "down") return "↓";
+      return "→";
+    }
+
+    function trendTitle(t) {
+      if (t === "up") return "Subiendo";
+      if (t === "down") return "Bajando";
+      return "Estable";
+    }
+
     document.getElementById("ranking").innerHTML =
       ranking.slice(0, 10).map((s, i) => {
         const ica = worstICA[i];
         const dotColor = ica ? icaColor(ica) : color(s.worst);
         const label = ica ? icaLabel(ica) : "";
+        const trend = getTrend(s);
+        const arrow = trendArrow(trend);
+        const tTitle = trendTitle(trend);
         return `
-        <div class="rank-item" data-key="${s.name}" role="button" tabindex="0" aria-label="${s.name}: ICA ${ica ?? s.worst} (${label})">
+        <div class="rank-item" data-key="${s.name}" role="button" tabindex="0" aria-label="${s.name}: ICA ${ica ?? s.worst} (${label})" title="${s.name} · ICA ${ica ?? s.worst} (${label}) · ${tTitle}">
           <span class="rank-num">${i + 1}</span>
           <span class="rank-dot" style="background:${dotColor}" aria-hidden="true"></span>
           <span class="rank-name">${s.name}</span>
           <span class="rank-val">${ica ?? s.worst}</span>
+          <span class="rank-trend" style="font-size:10px;color:var(--muted);flex-shrink:0" title="${tTitle}">${arrow}</span>
         </div>`;
       }).join("");
 
     document.querySelectorAll(".rank-item").forEach(el => {
       const handler = () => {
         const s = ctx.STATIONS[el.dataset.key];
-        if (s) { ctx.map.flyTo([s.lat, s.lon], 11); openChartPanel(s); }
+        if (!s) return;
+        const marker = _markers.get(s.name);
+        if (marker && ctx.layer.zoomToShowLayer) {
+          ctx.layer.zoomToShowLayer(marker, () => openChartPanel(s));
+        } else {
+          ctx.map.flyTo([s.lat, s.lon], 11);
+          openChartPanel(s);
+        }
       };
       el.addEventListener("click", handler);
       el.addEventListener("keydown", e => {
@@ -192,6 +251,9 @@ export function createStations(ctx) {
 
   function openChartPanel(station) {
     _currentStation = station;
+
+    document.getElementById("seriesChart").style.display = "block";
+    document.getElementById("chart-empty").style.display = "none";
 
     document.getElementById("chart-station-name").textContent = station.name;
     document.getElementById("chart-region").textContent =
@@ -238,6 +300,9 @@ export function createStations(ctx) {
 
     const fmt = v => v != null ? v.toFixed(1) : "—";
     const ica = snap.ica;
+    const trend = calcTrend(vals);
+    const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
+    const trendTitle = trend === "up" ? "Subiendo" : trend === "down" ? "Bajando" : "Estable";
 
     document.getElementById("chart-stats").innerHTML = `
       <div class="cstat">
@@ -253,38 +318,83 @@ export function createStations(ctx) {
         <div class="cstat-val">${fmt(avg)}</div>
       </div>
       ${ica ? `<div class="cstat" style="background:${icaColor(ica)}22;border:1px solid ${icaColor(ica)}">
-        <div class="cstat-lbl">ICA</div>
+        <div class="cstat-lbl">ICA <span style="font-size:10px;color:var(--muted)" title="${trendTitle}">${trendIcon}</span></div>
         <div class="cstat-val">${ica} <span class="cstat-unit">${icaLabel(ica)}</span></div>
       </div>` : ""}
     `;
 
+    const rec = healthRecommendation(ica, pollutant);
+    const recEl = document.getElementById("chart-recommend");
+    if (recEl && rec) {
+      const links = rec.sources.map(s => `<a href="${s.url}" target="_blank">${s.name}</a>`).join(" · ");
+      recEl.innerHTML = `
+        <div class="rec-title">Recomendaciones</div>
+        <div class="rec-row"><span class="rec-label">Población general</span><span class="rec-text">${rec.general}</span></div>
+        <div class="rec-row"><span class="rec-label">Grupos sensibles</span><span class="rec-text">${rec.sensitive}</span></div>
+        ${rec.pollutant ? `<div class="rec-note">${rec.pollutant.note}</div>` : ""}
+        <div class="rec-source">Fuentes: ${links}</div>
+      `;
+    } else if (recEl) {
+      recEl.innerHTML = "";
+    }
+
     const labels = serie.map(r => r.ts.slice(11, 16));
-    const data = serie.map(r => r.val);
+    const data = vals;
+
+    // Predicción (media móvil)
+    const prediction = calcPrediction(serie, 3);
+    const predLabels = prediction.map(r => r.ts.slice(11, 16));
+    const predData = prediction.map(r => r.val);
+    const fullLabels = [...labels, ...predLabels];
+    const fullData = [...data, ...predData.map(() => null)];
+    const predLineData = [...Array(data.length).fill(null), ...predData];
 
     const canvas = document.getElementById("seriesChart");
 
     if (chartInstance) {
-      chartInstance.data.labels = labels;
+      chartInstance.data.labels = fullLabels;
       chartInstance.data.datasets[0].label = pollutant;
-      chartInstance.data.datasets[0].data = data;
+      chartInstance.data.datasets[0].data = fullData;
+      chartInstance.data.datasets[1].data = predLineData;
       chartInstance.update("none");
     } else {
       chartInstance = new Chart(canvas, {
         type: "line",
         data: {
-          labels,
+          labels: fullLabels,
           datasets: [{
             label: pollutant,
-            data,
+            data: fullData,
             borderColor: "#4fc3f7",
+            backgroundColor: "rgba(79,195,247,0.1)",
             fill: true,
-            tension: 0.3
+            tension: 0.3,
+            pointRadius: 2
+          }, {
+            label: "Proyección",
+            data: predLineData,
+            borderColor: "#ff7e00",
+            borderDash: [4, 3],
+            fill: false,
+            tension: 0.3,
+            pointRadius: 3,
+            pointStyle: "triangle"
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          animation: false
+          animation: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  if (ctx.datasetIndex === 1 && ctx.parsed.y == null) return null;
+                  return ctx.dataset.label + ": " + ctx.parsed.y;
+                }
+              }
+            }
+          }
         }
       });
     }

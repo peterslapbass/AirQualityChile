@@ -35,4 +35,14 @@ export function createToggles(ctx, wind) {
       else ctx.map.removeLayer(ctx.sourceLayer);
     });
   }
+
+  const btnCblind = document.getElementById("toggle-cblind");
+  if (btnCblind) {
+    btnCblind.addEventListener("click", () => {
+      ctx.COLORBLIND = !ctx.COLORBLIND;
+      btnCblind.classList.toggle("active", ctx.COLORBLIND);
+      btnCblind.setAttribute("aria-pressed", ctx.COLORBLIND);
+      if (ctx._stationsRender) ctx._stationsRender();
+    });
+  }
 }
