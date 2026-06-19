@@ -30,10 +30,10 @@ export function createSources(ctx) {
 
         const marker = L.circleMarker([lat, lon], {
           radius,
-          color: "#000",
-          weight: 1,
+          color: "#fff",
+          weight: 1.5,
           fillColor: "#7b1fa2",
-          fillOpacity: 0.75
+          fillOpacity: 0.8
         });
 
         const top = Object.entries(src.emissions || {})

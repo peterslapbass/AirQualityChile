@@ -109,11 +109,13 @@ export function createStations(ctx) {
     }).filter(Boolean);
 
     processed.forEach(s => {
+      const radius = Math.min(16, Math.max(6, 6 + (s.worst / 150) * 10));
       const marker = L.circleMarker([s.lat, s.lon], {
-        radius: 8,
-        color: "#000",
+        radius,
+        color: "#fff",
+        weight: 1.5,
         fillColor: color(s.worst),
-        fillOpacity: 0.85
+        fillOpacity: 0.8
       }).addTo(ctx.layer);
 
       const entries = s.filteredEntries.filter(([_, val]) => val && val.value != null);

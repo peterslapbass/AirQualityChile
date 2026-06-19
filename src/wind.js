@@ -9,17 +9,29 @@ export function createWind(ctx) {
     return "#EF5350";
   }
 
+  function windIconSize(speed) {
+    return Math.min(36, Math.max(12, 12 + Math.log2(speed + 1) * 6));
+  }
+
   function createWindIcon(speed, dir) {
     const correctedDir = dir + 180;
+    const size = windIconSize(speed);
+    const color = getWindColor(speed);
 
     return L.divIcon({
       html: `<div style="
-        transform: rotate(${correctedDir}deg);
-        color: ${getWindColor(speed)};
-        font-size: ${Math.max(12, speed * 4)}px;
+        width:${size}px;height:${size}px;
+        display:flex;align-items:center;justify-content:center;
+        background:rgba(14,14,14,0.6);
+        border:1.5px solid ${color};
+        border-radius:50%;
+        transform:rotate(${correctedDir}deg);
+        font-size:${Math.max(8, size * 0.5)}px;
+        color:${color};
+        line-height:1;
       ">➤</div>`,
       className: "",
-      iconSize: [20, 20]
+      iconSize: [size + 4, size + 4]
     });
   }
 
