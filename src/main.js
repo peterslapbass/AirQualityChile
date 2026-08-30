@@ -29,8 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
     windField: null
   };
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap'
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Esri, HERE, Garmin, FAO, NOAA | \u00a9 OpenStreetMap contributors',
+    maxZoom: 19
   }).addTo(ctx.map);
 
   ctx.map.addLayer(ctx.layer);
