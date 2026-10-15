@@ -1,5 +1,6 @@
 import requests 
-import json import sys
+import json 
+import sys
 
 url = "https://sinca.mma.gob.cl/index.php/json/listadomapa2k19"
 
@@ -7,7 +8,7 @@ headers = { "User-Agent": ( "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " "AppleW
 
 try: response = requests.get( url, headers=headers, timeout=30, )
 
-if response.status_code == 403: print("Error: SINCA rechazó la solicitud (HTTP 403).") print("Respuesta del servidor:", response.text[:500]) sys.exit(1)
+if response.status_code == 403: print("Error: SINCA rechazó la solicitud (HTTP 403).") print("Respuesta:", response.text[:500]) sys.exit(1)
 
 response.raiseforstatus() data = response.json()
 
