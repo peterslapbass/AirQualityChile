@@ -2,7 +2,8 @@ name: Actualizar datos SINCA
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "0 16 * * *"  # 13:00 Chile continental (UTC-3)
+    - cron: "0 1 * * *"   # 22:00 Chile continental (UTC-3)
   workflow_dispatch:
 
 permissions:
