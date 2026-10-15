@@ -1,4 +1,5 @@
-import requests import json import sys
+import requests 
+import json import sys
 
 url = "https://sinca.mma.gob.cl/index.php/json/listadomapa2k19"
 
